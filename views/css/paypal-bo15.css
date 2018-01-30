@@ -1,0 +1,77 @@
+.panel {
+    position: relative;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: solid 1px #d3d8db;
+    background-color: #fff;
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+}
+
+.btn {
+    display: inline-block;
+    margin-bottom: 0;
+    font-weight: normal;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    background-image: none;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.42857;
+    border-radius: 3px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+.nav-pills>li {
+    float: left;
+}
+
+.paypal-nav .nav {
+    padding-bottom: 23px !important;
+}
+
+.col-sm-6 {
+    width: 48%;
+    float: left;
+    position: relative;
+    min-height: 1px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+a, a:hover, a:active {
+    color: #00aff0;
+    text-decoration: none;
+}
+#paypal_params .help-right {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+#api_user_name {
+    width: 30%
+}
+form#configuration_form {
+    margin-top: 15px;
+}
+label[for] {
+    width: 20px;
+    float: inherit;
+}
+input#configuration_form_submit_btn {
+    border-color: #9f9f9f;
+}
+#paypal_params .help-left {
+    border: none;
+}
+
+.alert-warning {
+    background-color: #FFF3D7 !important;
+    border-color: #D2A63C !important;
+    border-left: solid 3px #fcc94f;
+    color: #D2A63C;
+}

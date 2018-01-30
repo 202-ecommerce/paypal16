@@ -110,7 +110,7 @@ class PayPal extends PaymentModule
             || !Configuration::updateValue('PAYPAL_EXPRESS_CHECKOUT_SHORTCUT', 0)
             || !Configuration::updateValue('PAYPAL_CRON_TIME', date('Y-m-d H:m:s'))
             || !Configuration::updateValue('PAYPAL_BY_BRAINTREE', 0)
-            || !Configuration::updateValue('PAYPAL_EXPRESS_CHECKOUT_IN_CONTEXT', 0)
+            || !Configuration::updateValue('PAYPAL_EC_IN_CONTEXT', 0)
         ) {
             return false;
         }
@@ -214,8 +214,8 @@ class PayPal extends PaymentModule
             $order_state->add();
             Configuration::updateValue('PAYPAL_BRAINTREE_OS_AWAITING', (int) $order_state->id);
         }
-        if (!Configuration::get('PAYPAL_BRAINTREE_OS_AWAITING_VALIDATION')
-            || !Validate::isLoadedObject(new OrderState(Configuration::get('PAYPAL_BRAINTREE_OS_AWAITING_VALIDATION')))) {
+        if (!Configuration::get('PAYPAL_BRAINTREE_OS_WAIT_VALID')
+            || !Validate::isLoadedObject(new OrderState(Configuration::get('PAYPAL_BRAINTREE_OS_WAIT_VALID')))) {
             $order_state = new OrderState();
             $order_state->name = array();
             foreach (Language::getLanguages() as $language) {
@@ -232,7 +232,7 @@ class PayPal extends PaymentModule
             $order_state->logable = false;
             $order_state->invoice = false;
             $order_state->add();
-            Configuration::updateValue('PAYPAL_BRAINTREE_OS_AWAITING_VALIDATION', (int) $order_state->id);
+            Configuration::updateValue('PAYPAL_BRAINTREE_OS_WAIT_VALID', (int) $order_state->id);
         }
         return true;
     }
@@ -283,19 +283,19 @@ class PayPal extends PaymentModule
             'PAYPAL_LIVE_ACCESS',
             'PAYPAL_METHOD',
             'PAYPAL_MERCHANT_ID',
-            'PAYPAL_LIVE_BRAINTREE_ACCESS_TOKEN',
-            'PAYPAL_LIVE_BRAINTREE_EXPIRES_AT',
-            'PAYPAL_LIVE_BRAINTREE_REFRESH_TOKEN',
-            'PAYPAL_LIVE_BRAINTREE_MERCHANT_ID',
+            'PAYPAL_LIVE_BT_ACCESS_TOKEN',
+            'PAYPAL_LIVE_BT_EXPIRES_AT',
+            'PAYPAL_LIVE_BT_REFRESH_TOKEN',
+            'PAYPAL_LIVE_BT_MERCHANT_ID',
             'PAYPAL_BRAINTREE_ENABLED',
-            'PAYPAL_SANDBOX_BRAINTREE_ACCESS_TOKEN',
-            'PAYPAL_SANDBOX_BRAINTREE_EXPIRES_AT',
-            'PAYPAL_SANDBOX_BRAINTREE_REFRESH_TOKEN',
-            'PAYPAL_SANDBOX_BRAINTREE_MERCHANT_ID',
+            'PAYPAL_SANDBOX_BT_ACCESS_TOKEN',
+            'PAYPAL_SANDBOX_BT_EXPIRES_AT',
+            'PAYPAL_SANDBOX_BT_REFRESH_TOKEN',
+            'PAYPAL_SANDBOX_BT_MERCHANT_ID',
             'PAYPAL_BY_BRAINTREE',
             'PAYPAL_CRON_TIME',
             'PAYPAL_EXPRESS_CHECKOUT',
-            'PAYPAL_EXPRESS_CHECKOUT_IN_CONTEXT'
+            'PAYPAL_EC_IN_CONTEXT'
         );
 
         foreach ($config as $var) {
@@ -393,9 +393,10 @@ class PayPal extends PaymentModule
 
 
         $fields_form = array();
+        $btn_mode = version_compare(_PS_VERSION_, '1.6', '<') ? 'radio' : 'switch';
         $inputs = array(
             array(
-                'type' => 'switch',
+                'type' => $btn_mode,
                 'label' => $this->l('Activate sandbox'),
                 'name' => 'paypal_sandbox',
                 'is_bool' => true,
@@ -475,6 +476,10 @@ class PayPal extends PaymentModule
         }
 
         $this->context->controller->addCSS($this->_path.'views/css/paypal-bo.css', 'all');
+        if (version_compare(_PS_VERSION_, '1.6', '<')) {
+            $this->context->controller->addJS($this->_path.'views/js/paypal_bo.js', 'all');
+            $this->context->controller->addCSS($this->_path.'views/css/paypal-bo15.css', 'all');
+        }
 
         $result = $this->message;
         if (isset($config['block_info'])) {
@@ -505,7 +510,7 @@ class PayPal extends PaymentModule
 
         if ($method_name) {
             $method = AbstractMethodPaypal::load($method_name);
-            $method->setConfig(Tools::getAllValues());
+            $method->setConfig($_GET + $_POST);
         }
     }
 
@@ -550,7 +555,7 @@ class PayPal extends PaymentModule
                         'path' => $this->_path,
                     ));
                     $payment_options->setCallToActionText($action_text);
-                    if (Configuration::get('PAYPAL_EXPRESS_CHECKOUT_IN_CONTEXT')) {
+                    if (Configuration::get('PAYPAL_EC_IN_CONTEXT')) {
                         $payment_options->setAction('javascript:ECInContext()');
                     } else {
                         $payment_options->setAction($this->context->link->getModuleLink($this->name, 'ecInit', array('credit_card'=>'0'), true));
@@ -558,9 +563,7 @@ class PayPal extends PaymentModule
                     if (!$is_virtual) {
                         $payment_options->setAdditionalInformation($this->context->smarty->fetch('module:paypal/views/templates/front/payment_infos.tpl'));
                     }
-                    $payments_options = [
-                        $payment_options,
-                    ];
+                    $payments_options = array($payment_options);
 
                     if (Configuration::get('PAYPAL_API_CARD')) {
                         $payment_options = new PaymentOption();
@@ -584,7 +587,7 @@ class PayPal extends PaymentModule
                 }
                 break;
             case 'BT':
-                $merchant_accounts = Tools::jsonDecode(Configuration::get('PAYPAL_'.$mode.'_BRAINTREE_ACCOUNT_ID'));
+                $merchant_accounts = Tools::jsonDecode(Configuration::get('PAYPAL_'.$mode.'_BT_ACCOUNT_ID'));
                 $curr = context::getContext()->currency->iso_code;
                 if (!isset($merchant_accounts->$curr)) {
                     return $payments_options;
@@ -658,7 +661,7 @@ class PayPal extends PaymentModule
             if (Configuration::get('PAYPAL_METHOD') == 'EC' && Configuration::get('PAYPAL_EXPRESS_CHECKOUT_SHORTCUT') && isset($this->context->cookie->paypal_ecs)) {
                 $this->context->controller->registerJavascript($this->name . '-paypal-ec-sc', 'modules/' . $this->name . '/views/js/ec_shortcut_payment.js');
             }
-            if (Configuration::get('PAYPAL_METHOD') == 'EC' && Configuration::get('PAYPAL_EXPRESS_CHECKOUT_IN_CONTEXT')) {
+            if (Configuration::get('PAYPAL_METHOD') == 'EC' && Configuration::get('PAYPAL_EC_IN_CONTEXT')) {
                 $environment = (Configuration::get('PAYPAL_SANDBOX')?'sandbox':'live');
                 Media::addJsDef(array(
                     'environment' => $environment,
@@ -674,7 +677,7 @@ class PayPal extends PaymentModule
                 $this->context->controller->addJqueryPlugin('fancybox');
             }
         }
-        if (Tools::getValue('controller') == "product" && Configuration::get('PAYPAL_EXPRESS_CHECKOUT_IN_CONTEXT')) {
+        if (Tools::getValue('controller') == "product" && Configuration::get('PAYPAL_EC_IN_CONTEXT')) {
             $environment = (Configuration::get('PAYPAL_SANDBOX')?'sandbox':'live');
             Media::addJsDef(array(
                 'ec_sc_in_context' => 1,
@@ -728,13 +731,13 @@ class PayPal extends PaymentModule
     public function hookActionObjectCurrencyAddAfter($params)
     {
         $mode = Configuration::get('PAYPAL_SANDBOX') ? 'SANDBOX' : 'LIVE';
-        $merchant_accounts = (array)Tools::jsonDecode(Configuration::get('PAYPAL_'.$mode.'_BRAINTREE_ACCOUNT_ID'));
+        $merchant_accounts = (array)Tools::jsonDecode(Configuration::get('PAYPAL_'.$mode.'_BT_ACCOUNT_ID'));
         $method_bt = AbstractMethodPaypal::load('BT');
         $merchant_account = $method_bt->createForCurrency($params['object']->iso_code);
 
         if ($merchant_account) {
             $merchant_accounts[$params['object']->iso_code] = $merchant_account[$params['object']->iso_code];
-            Configuration::updateValue('PAYPAL_'.$mode.'_BRAINTREE_ACCOUNT_ID', Tools::jsonEncode($merchant_accounts));
+            Configuration::updateValue('PAYPAL_'.$mode.'_BT_ACCOUNT_ID', Tools::jsonEncode($merchant_accounts));
         }
     }
 
@@ -924,39 +927,39 @@ class PayPal extends PaymentModule
         }
 
         if (Tools::getValue('not_payed_capture')) {
-            $paypal_msg .= $this->displayWarning(
+            $paypal_msg .= $this->displayConfirmation(
                 '<p class="paypal-warning">'.$this->l('You couldn\'t refund order, it\'s not payed yet.').'</p>'
             );
         }
         if (Tools::getValue('error_refund')) {
-            $paypal_msg .= $this->displayWarning(
+            $paypal_msg .= $this->displayConfirmation(
                 '<p class="paypal-warning">'.$this->l('We have unexpected problem during refund operation. See massages for more details').'</p>'
             );
         }
         if (Tools::getValue('cancel_failed')) {
-            $paypal_msg .= $this->displayWarning(
+            $paypal_msg .= $this->displayConfirmation(
                 '<p class="paypal-warning">'.$this->l('We have unexpected problem during cancel operation. See massages for more details').'</p>'
             );
         }
         if ($order->current_state == Configuration::get('PS_OS_REFUND') &&  $paypal_order->payment_status == 'Refunded') {
-            $paypal_msg .= $this->displayWarning(
+            $paypal_msg .= $this->displayConfirmation(
                 '<p class="paypal-warning">'.$this->l('Your order is fully refunded by PayPal.').'</p>'
             );
         }
         if ($order->current_state == Configuration::get('PS_OS_PAYMENT') && Validate::isLoadedObject($paypal_capture) && $paypal_capture->id_capture) {
-            $paypal_msg .= $this->displayWarning(
+            $paypal_msg .= $this->displayConfirmation(
                 '<p class="paypal-warning">'.$this->l('Your order is fully captured by PayPal.').'</p>'
             );
         }
         if (Tools::getValue('error_capture')) {
-            $paypal_msg .= $this->displayWarning(
+            $paypal_msg .= $this->displayConfirmation(
                 '<p class="paypal-warning">'.$this->l('We have unexpected problem during capture operation. See massages for more details').'</p>'
             );
         }
 
         if ($paypal_order->total_paid != $paypal_order->total_prestashop) {
             $preferences = $this->context->link->getAdminLink('AdminPreferences', true);
-            $paypal_msg .= $this->displayWarning('<p class="paypal-warning">'.$this->l('Product pricing has been modified as your rounding settings aren\'t compliant with PayPal.').' '.
+            $paypal_msg .= $this->displayConfirmation('<p class="paypal-warning">'.$this->l('Product pricing has been modified as your rounding settings aren\'t compliant with PayPal.').' '.
                 $this->l('To avoid automatic rounding to customer for PayPal payments, please update your rounding settings.').' '.
                 '<a target="_blank" href="'.$preferences.'">'.$this->l('Reed more.').'</a></p>'
             );
@@ -1177,7 +1180,7 @@ class PayPal extends PaymentModule
 
     public function getPartnerInfo($method)
     {
-        $return_url = $this->context->link->getAdminLink('AdminModules', true).'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name.'&active_method='.Tools::getValue('method');
+        $return_url = $this->getBaseLink().basename(_PS_ADMIN_DIR_).'/'.$this->context->link->getAdminLink('AdminModules', true).'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name.'&active_method='.Tools::getValue('method');
         if (Configuration::get('PS_SSL_ENABLED')) {
             $shop_url = Tools::getShopDomainSsl(true);
         } else {
@@ -1225,6 +1228,30 @@ class PayPal extends PaymentModule
         '.$this->l('Payment due date').' : '.$information->payment_due_date.'; 
         '.$this->l('Reference').' : '.$information->reference_number.'.';
         return $tab;
+    }
+
+    protected function getBaseLink()
+    {
+        static $force_ssl = null;
+
+        if ($force_ssl === null)
+            $force_ssl = (Configuration::get('PS_SSL_ENABLED') && Configuration::get('PS_SSL_ENABLED_EVERYWHERE'));
+        $ssl = $force_ssl;
+
+        $shop = Context::getContext()->shop;
+
+        $base = (($ssl && $this->ssl_enable) ? 'https://'.$shop->domain_ssl : 'http://'.$shop->domain);
+
+        return $base.$shop->getBaseURI();
+    }
+
+    public function displayWarning($string)
+    {
+        $output = '
+		<div class="module_warning alert alert-warning">
+			'.$string.'
+		</div>';
+        return $output;
     }
 
 }

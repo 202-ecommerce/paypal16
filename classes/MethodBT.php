@@ -36,6 +36,7 @@ class MethodBT extends AbstractMethodPaypal
 
     public function getConfig(PayPal $module)
     {
+        $btn_mode = version_compare(_PS_VERSION_, '1.6', '<') ? 'radio' : 'switch';
         $params = array('inputs' => array(
             array(
                 'type' => 'select',
@@ -59,7 +60,7 @@ class MethodBT extends AbstractMethodPaypal
                 ),
             ),
             array(
-                'type' => 'switch',
+                'type' => $btn_mode,
                 'label' => $module->l('Show PayPal benefits to your customers'),
                 'name' => 'paypal_show_advantage',
                 'desc' => $module->l(''),
@@ -79,7 +80,7 @@ class MethodBT extends AbstractMethodPaypal
                 ),
             ),
             array(
-                'type' => 'switch',
+                'type' => $btn_mode,
                 'label' => $module->l('Accept PayPal Payments'),
                 'name' => 'activate_paypal',
                 'desc' => $module->l(''),
@@ -98,7 +99,7 @@ class MethodBT extends AbstractMethodPaypal
                 ),
             ),
             array(
-                'type' => 'switch',
+                'type' => $btn_mode,
                 'label' => $module->l('Activate 3D Secure for Braintree'),
                 'name' => 'paypal_3DSecure',
                 'desc' => $module->l(''),
@@ -146,7 +147,7 @@ class MethodBT extends AbstractMethodPaypal
     public function getMerchantCurrenciesForm($module)
     {
         $mode = Configuration::get('PAYPAL_SANDBOX') ? 'SANDBOX' : 'LIVE';
-        $merchant_accounts = (array)Tools::jsonDecode(Configuration::get('PAYPAL_'.$mode.'_BRAINTREE_ACCOUNT_ID'));
+        $merchant_accounts = (array)Tools::jsonDecode(Configuration::get('PAYPAL_'.$mode.'_BT_ACCOUNT_ID'));
 
         $ps_currencies = Currency::getCurrencies();
         $fields_form2 = array();
@@ -201,17 +202,17 @@ class MethodBT extends AbstractMethodPaypal
             foreach ($ps_currencies as $curr) {
                 $new_accounts[$curr['iso_code']] = Tools::getValue('braintree_curr_'.$curr['iso_code']);
             }
-            Configuration::updateValue('PAYPAL_'.$mode.'_BRAINTREE_ACCOUNT_ID', Tools::jsonEncode($new_accounts));
+            Configuration::updateValue('PAYPAL_'.$mode.'_BT_ACCOUNT_ID', Tools::jsonEncode($new_accounts));
         }
 
         if (Tools::getValue('accessToken') && Tools::getValue('expiresAt') && Tools::getValue('refreshToken') && Tools::getValue('merchantId')) {
             Configuration::updateValue('PAYPAL_METHOD', 'BT');
             Configuration::updateValue('PAYPAL_BRAINTREE_ENABLED', 1);
             $method_bt = AbstractMethodPaypal::load('BT');
-            Configuration::updateValue('PAYPAL_'.$mode.'_BRAINTREE_ACCESS_TOKEN', Tools::getValue('accessToken'));
-            Configuration::updateValue('PAYPAL_'.$mode.'_BRAINTREE_EXPIRES_AT', Tools::getValue('expiresAt'));
-            Configuration::updateValue('PAYPAL_'.$mode.'_BRAINTREE_REFRESH_TOKEN', Tools::getValue('refreshToken'));
-            Configuration::updateValue('PAYPAL_'.$mode.'_BRAINTREE_MERCHANT_ID', Tools::getValue('merchantId'));
+            Configuration::updateValue('PAYPAL_'.$mode.'_BT_ACCESS_TOKEN', Tools::getValue('accessToken'));
+            Configuration::updateValue('PAYPAL_'.$mode.'_BT_EXPIRES_AT', Tools::getValue('expiresAt'));
+            Configuration::updateValue('PAYPAL_'.$mode.'_BT_REFRESH_TOKEN', Tools::getValue('refreshToken'));
+            Configuration::updateValue('PAYPAL_'.$mode.'_BT_MERCHANT_ID', Tools::getValue('merchantId'));
             $existing_merchant_accounts = $method_bt->getAllCurrency();
 
             $new_merchant_accounts = $method_bt->createForCurrency();
@@ -219,7 +220,7 @@ class MethodBT extends AbstractMethodPaypal
             $all_merchant_accounts = array_merge((array)$existing_merchant_accounts, (array)$new_merchant_accounts);
             unset($all_merchant_accounts[0]);
             if ($all_merchant_accounts) {
-                Configuration::updateValue('PAYPAL_'.$mode.'_BRAINTREE_ACCOUNT_ID', Tools::jsonEncode($all_merchant_accounts));
+                Configuration::updateValue('PAYPAL_'.$mode.'_BT_ACCOUNT_ID', Tools::jsonEncode($all_merchant_accounts));
             }
         }
 
@@ -246,8 +247,8 @@ class MethodBT extends AbstractMethodPaypal
             }
         }
 
-        if (!Configuration::get('PAYPAL_'.$mode.'_BRAINTREE_ACCESS_TOKEN') || !Configuration::get('PAYPAL_'.$mode.'_BRAINTREE_EXPIRES_AT')
-            || !Configuration::get('PAYPAL_'.$mode.'_BRAINTREE_MERCHANT_ID')) {
+        if (!Configuration::get('PAYPAL_'.$mode.'_BT_ACCESS_TOKEN') || !Configuration::get('PAYPAL_'.$mode.'_BT_EXPIRES_AT')
+            || !Configuration::get('PAYPAL_'.$mode.'_BT_MERCHANT_ID')) {
             $paypal->errors .= $paypal->displayError($paypal->l('An error occurred. Please, check your credentials Braintree.'));
         }
     }
@@ -256,7 +257,7 @@ class MethodBT extends AbstractMethodPaypal
     {
 
         $this->mode = Configuration::get('PAYPAL_SANDBOX') ? 'SANDBOX' : 'LIVE';
-        $this->gateway = new Braintree_Gateway(['accessToken' => Configuration::get('PAYPAL_'.$this->mode.'_BRAINTREE_ACCESS_TOKEN') ]);
+        $this->gateway = new Braintree_Gateway(['accessToken' => Configuration::get('PAYPAL_'.$this->mode.'_BT_ACCESS_TOKEN') ]);
         $this->error = '';
     }
 
@@ -341,7 +342,7 @@ class MethodBT extends AbstractMethodPaypal
         }
         $transactionDetail = $this->getDetailsTransaction($transaction);
         if (Configuration::get('PAYPAL_API_INTENT') == "sale" && $transaction->paymentInstrumentType == "paypal_account" && $transaction->status == "settling") { // or submitted for settlement?
-            $order_state = Configuration::get('PAYPAL_BRAINTREE_OS_AWAITING_VALIDATION');
+            $order_state = Configuration::get('PAYPAL_BRAINTREE_OS_WAIT_VALID');
         } else if ((Configuration::get('PAYPAL_API_INTENT') == "sale" && $transaction->paymentInstrumentType == "paypal_account" && $transaction->status == "settled")
         || (Configuration::get('PAYPAL_API_INTENT') == "sale" && $transaction->paymentInstrumentType == "credit_card")) {
             $order_state = Configuration::get('PS_OS_PAYMENT');
@@ -387,7 +388,7 @@ class MethodBT extends AbstractMethodPaypal
                 'submitForSettlement' => Configuration::get('PAYPAL_API_INTENT') == "sale" ? true : false,
             );
         }
-        $merchant_accounts = (array)Tools::jsonDecode(Configuration::get('PAYPAL_'.$this->mode.'_BRAINTREE_ACCOUNT_ID'));
+        $merchant_accounts = (array)Tools::jsonDecode(Configuration::get('PAYPAL_'.$this->mode.'_BT_ACCOUNT_ID'));
         $address_billing = new Address($cart->id_address_invoice);
         $country_billing = new Country($address_billing->id_country);
         $address_shipping = new Address($cart->id_address_delivery);

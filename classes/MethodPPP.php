@@ -186,6 +186,7 @@ class MethodPPP extends AbstractMethodPaypal
 
     public function getConfig(Paypal $module)
     {
+        $btn_mode = version_compare(_PS_VERSION_, '1.6', '<') ? 'radio' : 'switch';
         $params = array('inputs' => array(
             array(
                 'type' => 'text',
@@ -207,7 +208,7 @@ class MethodPPP extends AbstractMethodPaypal
                 'thumb' => file_exists(_PS_MODULE_DIR_.'paypal/views/img/ppp_logo.png')?Context::getContext()->link->getBaseLink().'modules/paypal/views/img/ppp_logo.png':''
             ),
             array(
-                'type' => 'switch',
+                'type' => $btn_mode,
                 'label' => $module->l('Show PayPal benefits to your customers'),
                 'name' => 'paypal_show_advantage',
                 'desc' => $module->l(''),

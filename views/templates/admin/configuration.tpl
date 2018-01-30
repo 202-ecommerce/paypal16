@@ -371,15 +371,11 @@
         ]);
     }
 
-    $(document).ready(function(){
-
-        $('#change_product').click(function(event) {
-            event.preventDefault();
-            $('a[href=#paypal_conf]').click();
-        });
-        $('#configuration_form').insertAfter($('.configuration-block'));
-        $('#configuration_form_1').insertAfter($('.configuration-block'));
-
+   /* $('#change_product').click(function(event) {
+        event.preventDefault();
+        $('a[href=#paypal_conf]').click();
     });
+    $('#configuration_form').insertAfter($('.configuration-block'));
+    $('#configuration_form_1').insertAfter($('.configuration-block'));*/
 
 </script>
