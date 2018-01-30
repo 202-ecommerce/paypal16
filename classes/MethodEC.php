@@ -55,6 +55,7 @@ class MethodEC extends AbstractMethodPaypal
 
     public function getConfig(PayPal $module)
     {
+        $btn_mode = version_compare(_PS_VERSION_, '1.6', '<') ? 'radio' : 'switch';
         $mode = Configuration::get('PAYPAL_SANDBOX') ? 'SANDBOX' : 'LIVE';
         $params = array('inputs' => array(
             array(
@@ -79,7 +80,7 @@ class MethodEC extends AbstractMethodPaypal
                 ),
             ),
             array(
-                'type' => 'switch',
+                'type' => $btn_mode,
                 'label' => $module->l('Show PayPal benefits to your customers'),
                 'name' => 'paypal_show_advantage',
                 'desc' => $module->l(''),
@@ -99,7 +100,7 @@ class MethodEC extends AbstractMethodPaypal
                 ),
             ),
             array(
-                'type' => 'switch',
+                'type' => $btn_mode,
                 'label' => $module->l('Enabled Shortcut'),
                 'name' => 'paypal_show_shortcut',
                 'desc' => $module->l(''),
@@ -119,7 +120,7 @@ class MethodEC extends AbstractMethodPaypal
                 ),
             ),
             array(
-                'type' => 'switch',
+                'type' => $btn_mode,
                 'label' => $module->l('Enabled In context'),
                 'name' => 'paypal_ec_in_context',
                 'desc' => $module->l(''),
@@ -144,7 +145,7 @@ class MethodEC extends AbstractMethodPaypal
             'paypal_intent' => Configuration::get('PAYPAL_API_INTENT'),
             'paypal_show_advantage' => Configuration::get('PAYPAL_API_ADVANTAGES'),
             'paypal_show_shortcut' => Configuration::get('PAYPAL_EXPRESS_CHECKOUT_SHORTCUT'),
-            'paypal_ec_in_context' => Configuration::get('PAYPAL_EXPRESS_CHECKOUT_IN_CONTEXT'),
+            'paypal_ec_in_context' => Configuration::get('PAYPAL_EC_IN_CONTEXT'),
             'paypal_ec_merchant_id' => Configuration::get('PAYPAL_MERCHANT_ID_'.$mode),
         );
 
@@ -152,7 +153,7 @@ class MethodEC extends AbstractMethodPaypal
 
         if ($country_default != "FR" && $country_default != "UK" && $country_default != "IT" && $country_default != "ES") {
             $params['inputs'][] = array(
-                'type' => 'switch',
+                'type' => $btn_mode,
                 'label' => $module->l('Accept credit and debit card payment'),
                 'name' => 'paypal_card',
                 'is_bool' => true,
@@ -181,11 +182,11 @@ class MethodEC extends AbstractMethodPaypal
             'access_token_live' => Configuration::get('PAYPAL_LIVE_ACCESS'),
             'ec_card_active' => Configuration::get('PAYPAL_API_CARD'),
             'ec_paypal_active' => !Configuration::get('PAYPAL_API_CARD'),
-            'need_rounding' => ((Configuration::get('PS_ROUND_TYPE') == Order::ROUND_ITEM) || (Configuration::get('PS_PRICE_ROUND_MODE') != PS_ROUND_HALF_DOWN) ? 0 : 1),
+            'need_rounding' => ((Configuration::get('PS_ROUND_TYPE') == Configuration::get('PS_PRICE_ROUND_MODE')) || (Configuration::get('PS_PRICE_ROUND_MODE') != PS_ROUND_HALF_DOWN) ? 0 : 1),
             'ec_active' => Configuration::get('PAYPAL_EXPRESS_CHECKOUT'),
         ));
 
-        if (Configuration::get('PS_ROUND_TYPE') != Order::ROUND_ITEM || Configuration::get('PS_PRICE_ROUND_MODE') != PS_ROUND_HALF_DOWN) {
+        if (Configuration::get('PS_ROUND_TYPE') != Configuration::get('PS_PRICE_ROUND_MODE') || Configuration::get('PS_PRICE_ROUND_MODE') != PS_ROUND_HALF_DOWN) {
             $params['block_info'] = $module->display(_PS_MODULE_DIR_.$module->name, 'views/templates/admin/block_info.tpl');
         }
 
@@ -249,7 +250,7 @@ class MethodEC extends AbstractMethodPaypal
             Configuration::updateValue('PAYPAL_API_INTENT', $params['paypal_intent']);
             Configuration::updateValue('PAYPAL_API_ADVANTAGES', $params['paypal_show_advantage']);
             Configuration::updateValue('PAYPAL_EXPRESS_CHECKOUT_SHORTCUT', $params['paypal_show_shortcut']);
-            Configuration::updateValue('PAYPAL_EXPRESS_CHECKOUT_IN_CONTEXT', $params['paypal_ec_in_context']);
+            Configuration::updateValue('PAYPAL_EC_IN_CONTEXT', $params['paypal_ec_in_context']);
         }
 
         $country_default = Country::getIsoById(Configuration::get('PS_COUNTRY_DEFAULT'));
@@ -262,7 +263,7 @@ class MethodEC extends AbstractMethodPaypal
 
         if (Tools::isSubmit('save_rounding_settings')) {
             Configuration::updateValue('PAYPAL_SANDBOX', 0);
-            Configuration::updateValue('PS_ROUND_TYPE', Order::ROUND_ITEM);
+            Configuration::updateValue('PS_ROUND_TYPE', Configuration::get('PS_PRICE_ROUND_MODE'));
             Tools::redirect($this->module_link);
         }
 
@@ -270,6 +271,7 @@ class MethodEC extends AbstractMethodPaypal
             Configuration::updateValue('PAYPAL_API_CARD', $params['with_card']);
             if ((isset($params['modify']) && $params['modify']) || (Configuration::get('PAYPAL_METHOD') != $params['method'])) {
                 $response = $paypal->getPartnerInfo($params['method']);
+               // echo '<pre>';print_r($response);die;
                 $result = Tools::jsonDecode($response);
 
                 if (!$result->error && isset($result->data->url)) {
@@ -309,7 +311,7 @@ class MethodEC extends AbstractMethodPaypal
         $paymentDetails->PaymentAction = Tools::ucfirst(Configuration::get('PAYPAL_API_INTENT'));
         $setECReqDetails = new SetExpressCheckoutRequestDetailsType();
         $setECReqDetails->PaymentDetails[0] = $paymentDetails;
-        $setECReqDetails->CancelURL = Context::getContext()->link->getPageLink('order', true).'&step=1';
+        $setECReqDetails->CancelURL = Context::getContext()->link->getPageLink('order', true);
         $setECReqDetails->ReturnURL = Context::getContext()->link->getModuleLink($this->name, 'ecValidation', array(), true);
         $setECReqDetails->NoShipping = 1;
         $setECReqDetails->AddressOverride = 0;
@@ -561,7 +563,7 @@ class MethodEC extends AbstractMethodPaypal
         $cart = $context->cart;
         $customer = new Customer($cart->id_customer);
         if (!Validate::isLoadedObject($customer)) {
-            Tools::redirect('index.php?controller=order&step=1');
+            Tools::redirect('index.php?controller=order');
         }
         $currency = $context->currency;
         $payment_info = $exec_payment->DoExpressCheckoutPaymentResponseDetails->PaymentInfo[0];
@@ -730,7 +732,7 @@ class MethodEC extends AbstractMethodPaypal
             'PayPal_tracking_code' => 'PRESTASHOP_ECM',
             'PayPal_img_esc' => $img_esc,
             'action_url' => $context->link->getModuleLink('paypal', 'ecScInit', array(), true),
-            'ec_sc_in_context' => Configuration::get('PAYPAL_EXPRESS_CHECKOUT_IN_CONTEXT'),
+            'ec_sc_in_context' => Configuration::get('PAYPAL_EC_IN_CONTEXT'),
             'merchant_id' => Configuration::get('PAYPAL_MERCHANT_ID_'.Tools::strtoupper($environment)),
             'environment' => $environment,
         ));

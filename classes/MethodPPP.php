@@ -103,9 +103,8 @@ class MethodPPP extends AbstractMethodPaypal
 
     public function createWebExperience()
     {
-
         $brand_name = Configuration::get('PAYPAL_PPP_CONFIG_BRAND')?Configuration::get('PAYPAL_PPP_CONFIG_BRAND'):Configuration::get('PS_SHOP_NAME');
-        $brand_logo = file_exists(_PS_MODULE_DIR_.'paypal/views/img/ppp_logo.png')?Context::getContext()->link->getBaseLink(Context::getContext()->shop->id, true).'modules/paypal/views/img/ppp_logo.png':Context::getContext()->link->getBaseLink().'img/'.Configuration::get('PS_LOGO');
+        $brand_logo = file_exists(_PS_MODULE_DIR_.'paypal/views/img/ppp_logo.png')?Context::getContext()->shop->getBaseURL(Context::getContext()->shop->id, true).'modules/paypal/views/img/ppp_logo.png':Context::getContext()->shop->getBaseURL().'img/'.Configuration::get('PS_LOGO');
 
         $flowConfig = new \PayPal\Api\FlowConfig();
         // When set to "commit", the buyer is shown an amount, and the button text will read "Pay Now" on the checkout page.
@@ -187,6 +186,7 @@ class MethodPPP extends AbstractMethodPaypal
 
     public function getConfig(Paypal $module)
     {
+        $btn_mode = version_compare(_PS_VERSION_, '1.6', '<') ? 'radio' : 'switch';
         $params = array('inputs' => array(
             array(
                 'type' => 'text',
@@ -208,7 +208,7 @@ class MethodPPP extends AbstractMethodPaypal
                 'thumb' => file_exists(_PS_MODULE_DIR_.'paypal/views/img/ppp_logo.png')?Context::getContext()->link->getBaseLink().'modules/paypal/views/img/ppp_logo.png':''
             ),
             array(
-                'type' => 'switch',
+                'type' => $btn_mode,
                 'label' => $module->l('Show PayPal benefits to your customers'),
                 'name' => 'paypal_show_advantage',
                 'desc' => $module->l(''),
@@ -281,7 +281,7 @@ class MethodPPP extends AbstractMethodPaypal
 
         $redirectUrls = new RedirectUrls();
         $redirectUrls->setReturnUrl(Context::getContext()->link->getModuleLink($this->name, 'pppValidation', array(), true))
-            ->setCancelUrl(Context::getContext()->link->getPageLink('order', true).'&step=1');
+            ->setCancelUrl(Context::getContext()->link->getPageLink('order', true));
 
         // ### Payment
         // A Payment Resource; create one using
