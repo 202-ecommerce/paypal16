@@ -33,7 +33,12 @@ $(document).ready(function(){
         $('a[href=#paypal_params]').parents('li').removeClass('active');
     });
 
-    elms = document.querySelectorAll("#configuration_form");
+    if (document.querySelectorAll("#configuration_form").length > 0) {
+        elms = document.querySelectorAll("#configuration_form");
+    } else {
+        elms = document.querySelectorAll("#_form");
+    }
+
     for(var i = 0; i < elms.length; i++)
         $('#paypal_params').append(elms[i])
 
