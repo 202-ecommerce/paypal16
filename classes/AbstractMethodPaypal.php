@@ -26,7 +26,6 @@
 
 abstract class AbstractMethodPaypal
 {
-    // Force les classes filles à définir cette méthode
     abstract public function init($params);
     abstract public function validation();
     abstract public function confirmCapture();
@@ -35,13 +34,21 @@ abstract class AbstractMethodPaypal
     abstract public function setConfig($params);
     abstract public function getConfig(Paypal $module);
     abstract public function void($params);
+    abstract public function setPaymentVariables($params);
 
     public static function load($method)
     {
-        if (preg_match('/[a-zA-Z0-9_-]+/', $method) && file_exists(_PS_MODULE_DIR_.'paypal/classes/Method'.$method.'.php')) {
+        if (preg_match('/^[a-zA-Z0-9_-]+$/', $method) && file_exists(_PS_MODULE_DIR_.'paypal/classes/Method'.$method.'.php')) {
             include_once _PS_MODULE_DIR_.'paypal/classes/Method'.$method.'.php';
             $method_class = 'Method'.$method;
             return new $method_class();
         }
     }
+
+    public function renderPayment($params,$module)
+    {
+        $this->setPaymentVariables($params);
+        return $module->display('paypal',Tools::strtolower(get_class($this)).'_payment.tpl');
+    }
+
 }

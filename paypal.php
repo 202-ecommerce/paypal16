@@ -177,11 +177,11 @@ class PayPal extends PaymentModule
             $order_state = new OrderState();
             $order_state->name = array();
             foreach (Language::getLanguages() as $language) {
-                if (Tools::strtolower($language['iso_code']) == 'fr') {
-                    $order_state->name[$language['id_lang']] = 'En attente de paiement PayPal';
-                } else {
-                    $order_state->name[$language['id_lang']] = 'Awaiting for PayPal payment';
-                }
+            }
+            if (Tools::strtolower($language['iso_code']) == 'fr') {
+                $order_state->name[$language['id_lang']] = 'En attente de paiement PayPal';
+            } else {
+                $order_state->name[$language['id_lang']] = 'Awaiting for PayPal payment';
             }
             $order_state->send_email = false;
             $order_state->color = '#4169E1';
@@ -523,119 +523,21 @@ class PayPal extends PaymentModule
         return $sdk->getUrlConnect($connect_params);
     }
 
-    public function hookPaymentOptions($params)
+    public function hookPayment($params)
     {
-        $is_virtual = 0;
-        foreach ($params['cart']->getProducts() as $key => $product) {
-            if ($product['is_virtual']) {
-                $is_virtual = 1;
-                break;
-            }
+        $method = AbstractMethodPaypal::load(Configuration::get('PAYPAL_METHOD'));
+        return $method->renderPayment($params,$this);
+    }
+
+    public function hookDisplayPaymentEU($params)
+    {
+        if (!$this->active) {
+            return;
         }
 
-        $method_active = Configuration::get('PAYPAL_METHOD');
-        $payments_options = array();
-        $mode = Configuration::get('PAYPAL_SANDBOX') ? 'SANDBOX' : 'LIVE';
-
-        switch ($method_active) {
-            case 'EC':
-                if (!Configuration::get('PAYPAL_SANDBOX') && (Configuration::get('PAYPAL_USERNAME_LIVE') && Configuration::get('PAYPAL_PSWD_LIVE') && Configuration::get('PAYPAL_PSWD_LIVE'))
-                    || (Configuration::get('PAYPAL_SANDBOX') && (Configuration::get('PAYPAL_USERNAME_SANDBOX') && Configuration::get('PAYPAL_PSWD_SANDBOX') && Configuration::get('PAYPAL_SIGNATURE_SANDBOX')))) {
-                    $payment_options = new PaymentOption();
-                    $action_text = $this->l('Pay with Paypal');
-                    $payment_options->setLogo(Media::getMediaPath(_PS_MODULE_DIR_.$this->name.'/views/img/paypal_sm.png'));
-                    $payment_options->setModuleName($this->name);
-                    if (Configuration::get('PAYPAL_API_ADVANTAGES')) {
-                        $action_text .= ' | '.$this->l('It\'s easy, simple and secure');
-                    }
-                    $this->context->smarty->assign(array(
-                        'path' => $this->_path,
-                    ));
-                    $payment_options->setCallToActionText($action_text);
-                    if (Configuration::get('PAYPAL_EXPRESS_CHECKOUT_IN_CONTEXT')) {
-                        $payment_options->setAction('javascript:ECInContext()');
-                    } else {
-                        $payment_options->setAction($this->context->link->getModuleLink($this->name, 'ecInit', array('credit_card'=>'0'), true));
-                    }
-                    if (!$is_virtual) {
-                        $payment_options->setAdditionalInformation($this->context->smarty->fetch('module:paypal/views/templates/front/payment_infos.tpl'));
-                    }
-                    $payments_options = [
-                        $payment_options,
-                    ];
-
-                    if (Configuration::get('PAYPAL_API_CARD')) {
-                        $payment_options = new PaymentOption();
-                        $action_text = $this->l('Pay with debit or credit card');
-                        $payment_options->setLogo(Media::getMediaPath(_PS_MODULE_DIR_.$this->name.'/views/img/logo_card.png'));
-                        $payment_options->setCallToActionText($action_text);
-                        $payment_options->setModuleName($this->name);
-                        $payment_options->setAction($this->context->link->getModuleLink($this->name, 'ecInit', array('credit_card'=>'1'), true));
-                        $payment_options->setAdditionalInformation($this->context->smarty->fetch('module:paypal/views/templates/front/payment_infos_card.tpl'));
-                        $payments_options[] = $payment_options;
-                    }
-                    if (Configuration::get('PAYPAL_EXPRESS_CHECKOUT_SHORTCUT') && isset($this->context->cookie->paypal_ecs)) {
-                        $payment_options = new PaymentOption();
-                        $action_text = $this->l('Pay with paypal express checkout');
-                        $payment_options->setCallToActionText($action_text);
-                        $payment_options->setModuleName('express_checkout_schortcut');
-                        $payment_options->setAction($this->context->link->getModuleLink($this->name, 'ecValidation', array('shortcut'=>'1'), true));
-                        $payment_options->setAdditionalInformation($this->context->smarty->fetch('module:paypal/views/templates/front/payment_ec.tpl'));
-                        $payments_options[] = $payment_options;
-                    }
-                }
-                break;
-            case 'BT':
-                $merchant_accounts = Tools::jsonDecode(Configuration::get('PAYPAL_'.$mode.'_BRAINTREE_ACCOUNT_ID'));
-                $curr = context::getContext()->currency->iso_code;
-                if (!isset($merchant_accounts->$curr)) {
-                    return $payments_options;
-                }
-                if (Configuration::get('PAYPAL_BRAINTREE_ENABLED')) {
-                    if (Configuration::get('PAYPAL_BY_BRAINTREE')) {
-                        $embeddedOption = new PaymentOption();
-                        $action_text = $this->l('Pay with paypal');
-                        if (Configuration::get('PAYPAL_API_ADVANTAGES')) {
-                            $action_text .= ' | '.$this->l('It\'s easy, simple and secure');
-                        }
-                        $embeddedOption->setCallToActionText($action_text)
-                            ->setForm($this->generateFormPaypalBt());
-                        $embeddedOption->setModuleName('braintree');
-                        $payments_options[] = $embeddedOption;
-                    }
-
-                    $embeddedOption = new PaymentOption();
-                    $embeddedOption->setCallToActionText($this->l('Pay with card'))
-                        ->setForm($this->generateFormBt())
-                        ->setLogo(Media::getMediaPath(_PS_MODULE_DIR_.$this->name.'/views/img/mini-cards.png'));
-                    $embeddedOption->setModuleName('braintree');
-
-                    $payments_options[] = $embeddedOption;
-                }
-                break;
-            case 'PPP':
-                if (Configuration::get('PAYPAL_PLUS_ENABLED') && $this->assignInfoPaypalPlus()) {
-                    $payment_options = new PaymentOption();
-                    $action_text = $this->l('Pay with PayPal Plus');
-                    $payment_options->setCallToActionText($action_text);
-                    if (Configuration::get('PAYPAL_API_ADVANTAGES')) {
-                        $action_text .= ' | '.$this->l('It\'s easy, simple and secure');
-                    }
-                    $payment_options->setModuleName('paypal_plus');
-                    $payment_options->setAction('javascript:doPatchPPP();');
-                    try {
-                        $payment_options->setAdditionalInformation($this->context->smarty->fetch('module:paypal/views/templates/front/payment_ppp.tpl'));
-                    }catch (Exception $e)
-                    {
-                        die($e);
-                    }
-                    $payments_options[] = $payment_options;
-                }
-
-                break;
+        if ($this->hookPayment($params) == null) {
+            return null;
         }
-
-        return $payments_options;
     }
 
     public function hookHeader()
@@ -807,10 +709,6 @@ class PayPal extends PaymentModule
 
 
         return $this->context->smarty->fetch('module:paypal/views/templates/front/payment_bt.tpl');
-    }
-
-    public function hookPaymentReturn($params)
-    {
     }
 
     public function hookDisplayOrderConfirmation($params)
