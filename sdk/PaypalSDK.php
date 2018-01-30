@@ -55,7 +55,7 @@ class PaypalSDK
         curl_setopt($curl, CURLOPT_URL, $this->urlSI.$this->endpoint.'?'.$body );
         curl_setopt($curl, CURLOPT_URL, $this->urlSI.$this->endpoint.'?'.$body );
         curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true);
-        curl_setopt($curl, CURLOPT_CAINFO, _PS_CACHE_CA_CERT_FILE_);
+        //curl_setopt($curl, CURLOPT_CAINFO, _PS_CACHE_CA_CERT_FILE_);
 
         $response = curl_exec($curl);
         return $response;

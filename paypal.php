@@ -24,8 +24,6 @@
  *  International Registered Trademark & Property of PrestaShop SA
  */
 
-use PrestaShop\PrestaShop\Core\Payment\PaymentOption;
-
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -54,12 +52,12 @@ class PayPal extends PaymentModule
     {
         $this->name = 'paypal';
         $this->tab = 'payments_gateways';
-        $this->version = '4.3.0';
+        $this->version = '4.3.2';
         $this->author = 'PrestaShop';
         $this->display = 'view';
         $this->module_key = '336225a5988ad434b782f2d868d7bfcd';
         $this->is_eu_compatible = 1;
-        $this->ps_versions_compliancy = array('min' => '1.7', 'max' => _PS_VERSION_);
+        $this->ps_versions_compliancy = array('min' => '1.5', 'max' => '1.6');
         $this->controllers = array('payment', 'validation');
         $this->bootstrap = true;
 
@@ -1228,4 +1226,5 @@ class PayPal extends PaymentModule
         '.$this->l('Reference').' : '.$information->reference_number.'.';
         return $tab;
     }
+
 }

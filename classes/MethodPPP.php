@@ -103,9 +103,8 @@ class MethodPPP extends AbstractMethodPaypal
 
     public function createWebExperience()
     {
-
         $brand_name = Configuration::get('PAYPAL_PPP_CONFIG_BRAND')?Configuration::get('PAYPAL_PPP_CONFIG_BRAND'):Configuration::get('PS_SHOP_NAME');
-        $brand_logo = file_exists(_PS_MODULE_DIR_.'paypal/views/img/ppp_logo.png')?Context::getContext()->link->getBaseLink(Context::getContext()->shop->id, true).'modules/paypal/views/img/ppp_logo.png':Context::getContext()->link->getBaseLink().'img/'.Configuration::get('PS_LOGO');
+        $brand_logo = file_exists(_PS_MODULE_DIR_.'paypal/views/img/ppp_logo.png')?Context::getContext()->shop->getBaseURL(Context::getContext()->shop->id, true).'modules/paypal/views/img/ppp_logo.png':Context::getContext()->shop->getBaseURL().'img/'.Configuration::get('PS_LOGO');
 
         $flowConfig = new \PayPal\Api\FlowConfig();
         // When set to "commit", the buyer is shown an amount, and the button text will read "Pay Now" on the checkout page.
