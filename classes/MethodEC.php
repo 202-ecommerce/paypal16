@@ -755,6 +755,26 @@ class MethodEC extends AbstractMethodPaypal
 
     public function setPaymentVariables($params)
     {
+        $context = Context::getContext();
+
+        $is_virtual = 0;
+        foreach ($params['cart']->getProducts() as $key => $product) {
+            if ($product['is_virtual']) {
+                $is_virtual = 1;
+                break;
+            }
+        }
+
+        $context->smarty->assign(array(
+            'action_url_paypal' => urlencode($context->link->getModuleLink($this->name, 'ecInit', array('credit_card'=>'0'), true)),
+            'action_url_card' => urlencode($context->link->getModuleLink($this->name, 'ecInit', array('credit_card'=>'1'), true)),
+            'in_context' => Configuration::get('PAYPAL_EC_IN_CONTEXT'),
+            'path' => '/modules/'.$this->name,
+            'advantages' => Configuration::get('PAYPAL_API_ADVANTAGES'),
+            'is_virtual' => $is_virtual,
+            'card_active' => Configuration::get('PAYPAL_API_CARD'),
+        ));
+
 
     }
 }

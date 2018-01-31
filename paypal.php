@@ -175,11 +175,11 @@ class PayPal extends PaymentModule
             $order_state = new OrderState();
             $order_state->name = array();
             foreach (Language::getLanguages() as $language) {
-            }
-            if (Tools::strtolower($language['iso_code']) == 'fr') {
-                $order_state->name[$language['id_lang']] = 'En attente de paiement PayPal';
-            } else {
-                $order_state->name[$language['id_lang']] = 'Awaiting for PayPal payment';
+                if (Tools::strtolower($language['iso_code']) == 'fr') {
+                    $order_state->name[$language['id_lang']] = 'En attente de paiement PayPal';
+                } else {
+                    $order_state->name[$language['id_lang']] = 'Awaiting for PayPal payment';
+                }
             }
             $order_state->send_email = false;
             $order_state->color = '#4169E1';
@@ -243,7 +243,7 @@ class PayPal extends PaymentModule
      */
     private function registrationHook()
     {
-        if (!$this->registerHook('paymentOptions')
+        if (!$this->registerHook('payment')
             || !$this->registerHook('paymentReturn')
             || !$this->registerHook('displayOrderConfirmation')
             || !$this->registerHook('displayAdminOrder')
@@ -256,6 +256,7 @@ class PayPal extends PaymentModule
             || !$this->registerHook('actionBeforeCartUpdateQty')
             || !$this->registerHook('displayReassurance')
             || !$this->registerHook('displayInvoiceLegalFreeText')
+            || !$this->registerHook('displayPaymentEU')
         ) {
             return false;
         }
@@ -550,21 +551,21 @@ class PayPal extends PaymentModule
             if (Configuration::get('PAYPAL_METHOD') == 'BT') {
                 if (Configuration::get('PAYPAL_BRAINTREE_ENABLED')) {
                     $this->context->controller->addJqueryPlugin('fancybox');
-                    $this->context->controller->registerJavascript($this->name . '-braintreegateway-client', 'https://js.braintreegateway.com/web/3.24.0/js/client.min.js', array('server' => 'remote'));
-                    $this->context->controller->registerJavascript($this->name . '-braintreegateway-hosted', 'https://js.braintreegateway.com/web/3.24.0/js/hosted-fields.min.js', array('server' => 'remote'));
-                    $this->context->controller->registerJavascript($this->name . '-braintreegateway-data', 'https://js.braintreegateway.com/web/3.24.0/js/data-collector.min.js', array('server' => 'remote'));
-                    $this->context->controller->registerJavascript($this->name . '-braintreegateway-3ds', 'https://js.braintreegateway.com/web/3.24.0/js/three-d-secure.min.js', array('server' => 'remote'));
-                    $this->context->controller->registerStylesheet($this->name . '-braintreecss', 'modules/' . $this->name . '/views/css/braintree.css');
-                    $this->context->controller->registerJavascript($this->name . '-braintreejs', 'modules/' . $this->name . '/views/js/payment_bt.js');
+                    $this->context->controller->addJS('https://js.braintreegateway.com/web/3.24.0/js/client.min.js');
+                    $this->context->controller->addJS('https://js.braintreegateway.com/web/3.24.0/js/hosted-fields.min.js');
+                    $this->context->controller->addJS('https://js.braintreegateway.com/web/3.24.0/js/data-collector.min.js');
+                    $this->context->controller->addJS('https://js.braintreegateway.com/web/3.24.0/js/three-d-secure.min.js');
+                    $this->context->controller->addCSS('modules/' . $this->name . '/views/css/braintree.css');
+                    $this->context->controller->addJS('modules/' . $this->name . '/views/js/payment_bt.js');
                 }
                 if (Configuration::get('PAYPAL_BY_BRAINTREE')) {
-                    $this->context->controller->registerJavascript($this->name . '-pp-braintree-checkout', 'https://www.paypalobjects.com/api/checkout.js', array('server' => 'remote'));
-                    $this->context->controller->registerJavascript($this->name . '-pp-braintree-checkout-min', 'https://js.braintreegateway.com/web/3.24.0/js/paypal-checkout.min.js', array('server' => 'remote'));
-                    $this->context->controller->registerJavascript($this->name . '-pp-braintreejs', 'modules/' . $this->name . '/views/js/payment_pbt.js');
+                    $this->context->controller->addJS('https://www.paypalobjects.com/api/checkout.js');
+                    $this->context->controller->addJS('https://js.braintreegateway.com/web/3.24.0/js/paypal-checkout.min.js');
+                    $this->context->controller->addJS('modules/' . $this->name . '/views/js/payment_pbt.js');
                 }
             }
             if (Configuration::get('PAYPAL_METHOD') == 'EC' && Configuration::get('PAYPAL_EXPRESS_CHECKOUT_SHORTCUT') && isset($this->context->cookie->paypal_ecs)) {
-                $this->context->controller->registerJavascript($this->name . '-paypal-ec-sc', 'modules/' . $this->name . '/views/js/ec_shortcut_payment.js');
+                $this->context->controller->addJS('modules/' . $this->name . '/views/js/ec_shortcut_payment.js');
             }
             if (Configuration::get('PAYPAL_METHOD') == 'EC' && Configuration::get('PAYPAL_EC_IN_CONTEXT')) {
                 $environment = (Configuration::get('PAYPAL_SANDBOX')?'sandbox':'live');
@@ -573,12 +574,12 @@ class PayPal extends PaymentModule
                     'merchant_id' => Configuration::get('PAYPAL_MERCHANT_ID_'.Tools::strtoupper($environment)),
                     'url_token'   => $this->context->link->getModuleLink($this->name, 'ecInit', array('credit_card'=>'0','getToken'=>1), true),
                 ));
-                $this->context->controller->registerJavascript($this->name . '-paypal-checkout', 'https://www.paypalobjects.com/api/checkout.js', array('server' => 'remote'));
-                $this->context->controller->registerJavascript($this->name . '-paypal-checkout-in-context', 'modules/' . $this->name . '/views/js/ec_in_context.js', array('server' => 'remote'));
+                $this->context->controller->addJS('https://www.paypalobjects.com/api/checkout.js');
+                $this->context->controller->addJS('modules/' . $this->name . '/views/js/ec_in_context.js');
             }
             if (Configuration::get('PAYPAL_METHOD') == 'PPP' && Configuration::get('PAYPAL_PLUS_ENABLED')) {
-                $this->context->controller->registerJavascript($this->name . '-plus-minjs', 'https://www.paypalobjects.com/webstatic/ppplus/ppplus.min.js', array('server' => 'remote'));
-                $this->context->controller->registerJavascript($this->name . '-plus-payment-js', 'modules/' . $this->name . '/views/js/payment_ppp.js');
+                $this->context->controller->addJS('https://www.paypalobjects.com/webstatic/ppplus/ppplus.min.js');
+                $this->context->controller->addJS('modules/' . $this->name . '/views/js/payment_ppp.js');
                 $this->context->controller->addJqueryPlugin('fancybox');
             }
         }
@@ -737,7 +738,7 @@ class PayPal extends PaymentModule
             }
 
         }
-        $this->context->controller->registerJavascript($this->name.'-order_confirmation_js', $this->_path.'/views/js/order_confirmation.js');
+        $this->context->controller->addJS($this->_path.'/views/js/order_confirmation.js');
         return $this->context->smarty->fetch('module:paypal/views/templates/hook/order_confirmation.tpl');
     }
 

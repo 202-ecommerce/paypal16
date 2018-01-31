@@ -48,7 +48,7 @@ abstract class AbstractMethodPaypal
     public function renderPayment($params, $module)
     {
         $this->setPaymentVariables($params);
-        return $module->display('paypal',Tools::strtolower(get_class($this)).'_payment.tpl');
+        return $module->display('paypal', 'views/templates/front/'.Tools::strtolower(get_class($this)).'_payment.tpl');
     }
 
 }
