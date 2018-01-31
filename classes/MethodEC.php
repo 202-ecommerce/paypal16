@@ -752,4 +752,9 @@ class MethodEC extends AbstractMethodPaypal
         }
         return $response;
     }
+
+    public function setPaymentVariables($params)
+    {
+
+    }
 }

@@ -547,4 +547,9 @@ class MethodPPP extends AbstractMethodPaypal
         $sale = Payment::get($id_payment, $this->_getCredentialsInfo());
         return $sale->payment_instruction;
     }
+
+    public function setPaymentVariables($params)
+    {
+
+    }
 }

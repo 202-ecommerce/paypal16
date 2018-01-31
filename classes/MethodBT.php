@@ -594,4 +594,9 @@ class MethodBT extends AbstractMethodPaypal
         ]);
         return $collection;
     }
+
+    public function setPaymentVariables($params)
+    {
+
+    }
 }

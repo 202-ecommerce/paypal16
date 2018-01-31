@@ -493,6 +493,7 @@ class PayPal extends PaymentModule
         return $result;
     }
 
+
     private function _postProcess()
     {
         if (Tools::isSubmit('paypal_config')) {

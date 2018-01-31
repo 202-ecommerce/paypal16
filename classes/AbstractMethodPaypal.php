@@ -45,7 +45,7 @@ abstract class AbstractMethodPaypal
         }
     }
 
-    public function renderPayment($params,$module)
+    public function renderPayment($params, $module)
     {
         $this->setPaymentVariables($params);
         return $module->display('paypal',Tools::strtolower(get_class($this)).'_payment.tpl');
