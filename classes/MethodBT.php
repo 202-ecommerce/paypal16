@@ -597,6 +597,41 @@ class MethodBT extends AbstractMethodPaypal
 
     public function setPaymentVariables($params)
     {
+        $context = Context::getContext();
+        $mode = Configuration::get('PAYPAL_SANDBOX') ? 'SANDBOX' : 'LIVE';
+        $merchant_accounts = Tools::jsonDecode(Configuration::get('PAYPAL_'.$mode.'_BT_ACCOUNT_ID'));
+        $curr = context::getContext()->currency->iso_code;
+        if (!isset($merchant_accounts->$curr)) {
+            return;
+        }
+        $is_virtual = 0;
+        foreach ($params['cart']->getProducts() as $key => $product) {
+            if ($product['is_virtual']) {
+                $is_virtual = 1;
+                break;
+            }
+        }
+
+        $amount = $context->cart->getOrderTotal();
+        $clientToken = $this->init(true);
+        $check3DS = 0;
+        $required_3ds_amount = Tools::convertPrice(Configuration::get('PAYPAL_3D_SECURE_AMOUNT'), Currency::getCurrencyInstance((int)$context->currency->id));
+        if (Configuration::get('PAYPAL_USE_3D_SECURE') && $amount > $required_3ds_amount) {
+            $check3DS = 1;
+        }
+
+        $context->smarty->assign(array(
+            'path' => '/modules/'.$this->name,
+            'advantages' => Configuration::get('PAYPAL_API_ADVANTAGES'),
+            'paypal_active' => Configuration::get('PAYPAL_BY_BRAINTREE'),
+            'error_msg'=> Tools::getValue('bt_error_msg'),
+            'braintreeToken'=> $clientToken,
+            'braintreeSubmitUrl'=> urlencode($context->link->getModuleLink('paypal', 'btValidation', array(), true)),
+            'braintreeAmount'=> $amount,
+            'check3Dsecure'=> $check3DS,
+            'is_virtual' => $is_virtual,
+            'mode' => $this->mode == 'SANDBOX' ? Tools::strtolower($this->mode) : 'production',
+        ));
 
     }
 }

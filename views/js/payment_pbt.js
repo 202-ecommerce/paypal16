@@ -14,7 +14,7 @@
  */
 
 $(document).ready(function(){
-    if ($('section#checkout-payment-step').hasClass('js-current-step')) {
+    if ($('.payment_module').length > 0) {
         initPaypalBraintree();
     }
 });
@@ -64,10 +64,7 @@ function initPaypalBraintree() {
                         .then(function (payload) {
                             // Submit `payload.nonce` to your server.
                             document.querySelector('input#paypal_payment_method_nonce').value = payload.nonce;
-                            $('#paypal-button').hide();
-                            $('#bt-paypal-error-msg').hide();
-                            $('#paypal-vault-info').show().append(payload.details.firstName+' '+payload.details.lastName+' '+payload.details.email);
-
+                            paypal_bt_form.submit();
                         });
                 },
 
@@ -80,17 +77,6 @@ function initPaypalBraintree() {
                 }
             }, '#paypal-button').then(function (e) {
 
-            });
-            $('#payment-confirmation button').click(function(){
-                payment_selected = $('input[name=payment-option]:checked').attr('id');
-                if (!$('#pay-with-'+payment_selected+'-form .payment_module').hasClass('paypal-braintree')) {
-                    return true;
-                }
-                if (!document.querySelector('input#paypal_payment_method_nonce').value) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    $('#bt-paypal-error-msg').show().text(pbt_translations.empty_nonce);
-                }
             });
 
 

@@ -175,3 +175,10 @@
 #logo_braintree_by_paypal{
     margin-top:15px;
 }
+
+.payment_module.braintree-card {
+    border :none;
+}
+.braintree-card #block-cvv {
+    margin-left: 28px;
+}

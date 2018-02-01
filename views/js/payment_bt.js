@@ -14,14 +14,14 @@
  */
 
     $(document).ready(function(){
-        if ($('section#checkout-payment-step').hasClass('js-current-step')) {
+        if ($('.payment_module').length > 0) {
             initBraintreeCard();
         }
     });
 
 
     function initBraintreeCard() {
-        var bt_button = document.getElementById('payment-confirmation');
+        var bt_button = document.getElementById('braintree_submit');
         var bt_form = document.querySelector('#braintree-form');
 
         braintree.client.create({
@@ -86,10 +86,6 @@
 
 
                 bt_button.addEventListener('click', function (event) {
-                    payment_selected = $('input[name=payment-option]:checked').attr('id');
-                    if (!$('#pay-with-'+payment_selected+'-form .payment_module').hasClass('braintree-card')) {
-                        return true;
-                    }
                     event.preventDefault();
                     event.stopPropagation();
                     hostedFieldsInstance.tokenize(function (tokenizeErr, payload) {

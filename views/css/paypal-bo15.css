@@ -52,7 +52,7 @@ a, a:hover, a:active {
     padding: 0 !important;
     margin: 0 !important;
 }
-#api_user_name {
+#api_user_name, #braintree_curr_EUR {
     width: 30%
 }
 form#configuration_form {

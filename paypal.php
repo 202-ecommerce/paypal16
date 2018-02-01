@@ -516,18 +516,6 @@ class PayPal extends PaymentModule
         }
     }
 
-    public function getBtConnectUrl()
-    {
-        $connect_params = array(
-            'user_country' => $this->context->country->iso_code,
-            'user_email' => Configuration::get('PS_SHOP_EMAIL'),
-            'business_name' => Configuration::get('PS_SHOP_NAME'),
-            'redirect_url' => $this->module_link.'&active_method='.Tools::getValue('method'),
-        );
-        $sdk = new BraintreeSDK(Configuration::get('PAYPAL_SANDBOX'));
-        return $sdk->getUrlConnect($connect_params);
-    }
-
     public function hookPayment($params)
     {
         $method = AbstractMethodPaypal::load(Configuration::get('PAYPAL_METHOD'));
@@ -555,13 +543,13 @@ class PayPal extends PaymentModule
                     $this->context->controller->addJS('https://js.braintreegateway.com/web/3.24.0/js/hosted-fields.min.js');
                     $this->context->controller->addJS('https://js.braintreegateway.com/web/3.24.0/js/data-collector.min.js');
                     $this->context->controller->addJS('https://js.braintreegateway.com/web/3.24.0/js/three-d-secure.min.js');
-                    $this->context->controller->addCSS('modules/' . $this->name . '/views/css/braintree.css');
-                    $this->context->controller->addJS('modules/' . $this->name . '/views/js/payment_bt.js');
+                    $this->context->controller->addCSS($this->_path.'views/css/braintree.css', 'all');
+                    $this->context->controller->addJS($this->_path.'views/js/payment_bt.js', 'all');
                 }
                 if (Configuration::get('PAYPAL_BY_BRAINTREE')) {
                     $this->context->controller->addJS('https://www.paypalobjects.com/api/checkout.js');
                     $this->context->controller->addJS('https://js.braintreegateway.com/web/3.24.0/js/paypal-checkout.min.js');
-                    $this->context->controller->addJS('modules/' . $this->name . '/views/js/payment_pbt.js');
+                    $this->context->controller->addJS($this->_path.'views/js/payment_pbt.js', 'all');
                 }
             }
             if (Configuration::get('PAYPAL_METHOD') == 'EC' && Configuration::get('PAYPAL_EXPRESS_CHECKOUT_SHORTCUT') && isset($this->context->cookie->paypal_ecs)) {
@@ -718,7 +706,8 @@ class PayPal extends PaymentModule
 
     public function hookDisplayOrderConfirmation($params)
     {
-        $paypal_order = PaypalOrder::loadByOrderId($params['order']->id);
+        $paypal_order = PaypalOrder::loadByOrderId((int) Tools::getValue('id_order'));
+
         if (!Validate::isLoadedObject($paypal_order)) {
             return;
         }
@@ -739,7 +728,8 @@ class PayPal extends PaymentModule
 
         }
         $this->context->controller->addJS($this->_path.'/views/js/order_confirmation.js');
-        return $this->context->smarty->fetch('module:paypal/views/templates/hook/order_confirmation.tpl');
+
+        return $this->display(__FILE__, 'views/templates/hook/order_confirmation.tpl');
     }
 
 
@@ -1083,11 +1073,6 @@ class PayPal extends PaymentModule
     public function getPartnerInfo($method)
     {
         $return_url = $this->getBaseLink().basename(_PS_ADMIN_DIR_).'/'.$this->context->link->getAdminLink('AdminModules', true).'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name.'&active_method='.Tools::getValue('method');
-        if (Configuration::get('PS_SSL_ENABLED')) {
-            $shop_url = Tools::getShopDomainSsl(true);
-        } else {
-            $shop_url = Tools::getShopDomain(true);
-        }
 
         $partner_info = array(
             'email'         => $this->context->employee->email,
@@ -1110,6 +1095,19 @@ class PayPal extends PaymentModule
 
         $response = $sdk->getUrlOnboarding($partner_info);
         return $response;
+    }
+
+    public function getBtConnectUrl()
+    {
+        $return_url = $this->getBaseLink().basename(_PS_ADMIN_DIR_).'/'.$this->context->link->getAdminLink('AdminModules', true).'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name.'&active_method='.Tools::getValue('method');
+        $connect_params = array(
+            'user_country' => $this->context->country->iso_code,
+            'user_email' => Configuration::get('PS_SHOP_EMAIL'),
+            'business_name' => Configuration::get('PS_SHOP_NAME'),
+            'redirect_url' => $return_url,
+        );
+        $sdk = new BraintreeSDK(Configuration::get('PAYPAL_SANDBOX'));
+        return $sdk->getUrlConnect($connect_params);
     }
 
     public function hookDisplayInvoiceLegalFreeText($params)
