@@ -14,9 +14,7 @@
  */
 
 $(document).ready(function(){
-    if ($('section#checkout-payment-step').hasClass('js-current-step')) {
-        $('input[data-module-name=express_checkout_schortcut]').click();
-        $('.payment-options div').hide();
-        $('.payment-options').append($('#paypal-es-checked'));
-    }
+        $('.payment_module').hide();
+        $('#paypal-es-checked').show();
+
 });

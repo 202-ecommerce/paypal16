@@ -716,11 +716,7 @@ class MethodEC extends AbstractMethodPaypal
 
     public function renderExpressCheckoutShortCut(&$context, $type)
     {
-        if (!Configuration::get('PAYPAL_EXPRESS_CHECKOUT_SHORTCUT')) {
-            return false;
-        }
-
-        $lang = $context->country->iso_code;
+        $lang = $context->language->iso_code;
         $environment = (Configuration::get('PAYPAL_SANDBOX')?'sandbox':'live');
         $img_esc = "/modules/paypal/views/img/ECShortcut/".Tools::strtolower($lang)."/buy/buy.png";
 
@@ -731,13 +727,16 @@ class MethodEC extends AbstractMethodPaypal
             'PayPal_payment_type' => $type,
             'PayPal_tracking_code' => 'PRESTASHOP_ECM',
             'PayPal_img_esc' => $img_esc,
-            'action_url' => $context->link->getModuleLink('paypal', 'ecScInit', array(), true),
+            'action_url' => urlencode($context->link->getModuleLink('paypal', 'ecScInit', array(), true)),
             'ec_sc_in_context' => Configuration::get('PAYPAL_EC_IN_CONTEXT'),
             'merchant_id' => Configuration::get('PAYPAL_MERCHANT_ID_'.Tools::strtoupper($environment)),
             'environment' => $environment,
+            'ec_sc_action_url'   => urlencode($context->link->getModuleLink($this->name, 'ecScInit', array('credit_card'=>'0','getToken'=>1), true)),
+            'ec_sc_in_context' => Configuration::get('PAYPAL_EC_IN_CONTEXT'),
         ));
 
-        return $context->smarty->fetch('module:paypal/views/templates/hook/EC_shortcut.tpl');
+        $paypal = Module::getInstanceByName('paypal');
+        return $paypal->display('paypal', 'views/templates/hook/EC_shortcut.tpl');
     }
 
     public function getInfo($params)
@@ -778,6 +777,12 @@ class MethodEC extends AbstractMethodPaypal
             'merchant_id' => Configuration::get('PAYPAL_MERCHANT_ID_'.Tools::strtoupper($environment)),
             'url_token'   => urlencode($context->link->getModuleLink($this->name, 'ecInit', array('credit_card'=>'0','getToken'=>1), true)),
         ));
+
+        if (Configuration::get('PAYPAL_EXPRESS_CHECKOUT_SHORTCUT') && isset($context->cookie->paypal_ecs)) {
+            $context->smarty->assign(array(
+                'ec_sc_validation_url' => urlencode($context->link->getModuleLink($this->name, 'ecValidation', array('shortcut'=>'1'), true)),
+            ));
+        }
 
 
     }

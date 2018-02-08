@@ -69,7 +69,7 @@ class PaypalEcScOrderModuleFrontController extends ModuleFrontController
         $id_cart = $this->context->cart->id; // save id cart
 
         // Login Customer
-        $this->context->updateCustomer($customer);
+        $paypal->updateCustomer($customer);
 
         $this->context->cart = new Cart($id_cart); // Reload cart
         $this->context->cart->id_customer = $customer->id;
@@ -138,4 +138,6 @@ class PaypalEcScOrderModuleFrontController extends ModuleFrontController
         $this->context->cookie->__set('paypal_ecs_payerid', $info->GetExpressCheckoutDetailsResponseDetails->PayerInfo->PayerID);
         Tools::redirect($this->context->link->getPageLink('order', null, null, array('step'=>2)));
     }
+
+
 }

@@ -26,16 +26,8 @@ document.addEventListener("DOMContentLoaded", function(){
 function setInput()
 {
     $('#paypal_quantity').val($('[name="qty"]').val());
-    var combination = [];
-    var re = /group\[([0-9]+)\]/;
-    $.each($('#add-to-cart-or-refresh').serializeArray(),function(key, item){
-        if(res = item.name.match(re))
-        {
-            combination.push(res[1]+':'+item.value);
-        }
-    });
     $('#paypal_url_page').val(document.location.href);
-    $('#paypal_combination').val(combination.join('|'));
+    $('#paypal_combination').val($('input[id=idCombination]').val());
     if (typeof ec_sc_in_context != "undefined" && ec_sc_in_context) {
         ECSInContext(combination);
     } else {

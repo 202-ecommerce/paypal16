@@ -24,7 +24,7 @@
 *}
 
 <div id="container_express_checkout" style="float:right; margin: 10px 40px 0 0">
-    <form id="paypal_payment_form_cart" class="paypal_payment_form" action="{$action_url|escape:'htmlall':'UTF-8'}" title="{l s='Pay with PayPal' mod='paypal'}" method="post" data-ajax="false">
+    <form id="paypal_payment_form_cart" class="paypal_payment_form" action="{$action_url|escape:'htmlall':'UTF-8'|urldecode}" title="{l s='Pay with PayPal' mod='paypal'}" method="post" data-ajax="false">
         <input type="hidden" name="id_product" value="{$smarty.get.id_product|intval}" />
         <input type="hidden" name="quantity" id="paypal_quantity" value=""/>
         <input type="hidden" name="combination" value="" id="paypal_combination"/>
@@ -37,5 +37,16 @@
     </form>
 </div>
 <div class="clearfix"></div>
+<script>
+    var ec_sc_environment = "{$environment|escape:'htmlall':'UTF-8'}";
+    var ec_sc_action_url = "{$ec_sc_action_url|escape:'htmlall':'UTF-8'|urldecode}";
+    var merchant_id = "{$merchant_id|escape:'htmlall':'UTF-8'}";
+
+</script>
+{if $ec_sc_in_context}
+    <script>
+        var ec_sc_in_context = "{$ec_sc_in_context|escape:'htmlall':'UTF-8'}";
+    </script>
+{/if}
 <script type="text/javascript" src="https://www.paypalobjects.com/api/checkout.js"></script>
 <script type="text/javascript" src="/modules/paypal/views/js/ec_shortcut.js"></script>

@@ -22,3 +22,13 @@
     var environment = "{$environment|escape:'htmlall':'UTF-8'}";
     var url_token = "{$url_token|escape:'htmlall':'UTF-8'|urldecode}";
 </script>
+
+{if isset($ec_sc_validation_url)}
+    <p class="payment_module" id="paypal-es-checked">
+        <a href="{$ec_sc_validation_url|escape:'htmlall':'UTF-8'|urldecode}" title="{l s='Pay with paypal express checkout' mod='paypal'}">
+            <img src="{$path|escape:'htmlall':'UTF-8'}/views/img/paypal_sm.png" alt="{l s='Pay with paypal express checkout' mod='paypal'}">
+            {l s='Pay with paypal express checkout' mod='paypal'}
+        </a>
+    <p>{l s='You have already payed with PayPal express checkout.' mod='paypal'}</p>
+    </p>
+{/if}

@@ -254,7 +254,6 @@ class PayPal extends PaymentModule
             || !$this->registerHook('displayBackOfficeHeader')
             || !$this->registerHook('displayFooterProduct')
             || !$this->registerHook('actionBeforeCartUpdateQty')
-            || !$this->registerHook('displayReassurance')
             || !$this->registerHook('displayInvoiceLegalFreeText')
             || !$this->registerHook('displayPaymentEU')
         ) {
@@ -565,15 +564,6 @@ class PayPal extends PaymentModule
                 $this->context->controller->addJqueryPlugin('fancybox');
             }
         }
-        if (Tools::getValue('controller') == "product" && Configuration::get('PAYPAL_EC_IN_CONTEXT')) {
-            $environment = (Configuration::get('PAYPAL_SANDBOX')?'sandbox':'live');
-            Media::addJsDef(array(
-                'ec_sc_in_context' => 1,
-                'ec_sc_environment' => $environment,
-                'merchant_id' => Configuration::get('PAYPAL_MERCHANT_ID_'.Tools::strtoupper($environment)),
-                'ec_sc_action_url'   => $this->context->link->getModuleLink($this->name, 'ecScInit', array('credit_card'=>'0','getToken'=>1), true),
-            ));
-        }
     }
 
     public function hookDisplayBackOfficeHeader()
@@ -727,9 +717,9 @@ class PayPal extends PaymentModule
     }
 
 
-    public function hookDisplayReassurance()
+    public function hookDisplayFooterProduct()
     {
-        if ('product' !== $this->context->controller->php_self || Configuration::get('PAYPAL_METHOD') != 'EC') {
+        if ('product' !== $this->context->controller->php_self || Configuration::get('PAYPAL_METHOD') != 'EC' || !Configuration::get('PAYPAL_EXPRESS_CHECKOUT_SHORTCUT')) {
             return false;
         }
         $method = AbstractMethodPaypal::load('EC');
@@ -1145,6 +1135,46 @@ class PayPal extends PaymentModule
 			'.$string.'
 		</div>';
         return $output;
+    }
+
+    /**
+     * Update context after customer login
+     * @param Customer $customer Created customer
+     */
+    public function updateCustomer(Customer $customer)
+    {
+        $context = $this->context;
+        $context->customer = $customer;
+        $context->cookie->id_customer = (int) $customer->id;
+        $context->cookie->customer_lastname = $customer->lastname;
+        $context->cookie->customer_firstname = $customer->firstname;
+        $context->cookie->passwd = $customer->passwd;
+        $context->cookie->logged = 1;
+        $customer->logged = 1;
+        $context->cookie->email = $customer->email;
+        $context->cookie->is_guest =  $customer->isGuest();
+        $context->cart->secure_key = $customer->secure_key;
+
+        if (Configuration::get('PS_CART_FOLLOWING') && (empty($context->cookie->id_cart) || Cart::getNbProducts($context->cookie->id_cart) == 0) && $idCart = (int) Cart::lastNoneOrderedCart($context->customer->id)) {
+            $context->cart = new Cart($idCart);
+        } else {
+            $idCarrier = (int) $context->cart->id_carrier;
+            $context->cart->id_carrier = 0;
+            $context->cart->setDeliveryOption(null);
+            $context->cart->id_address_delivery = (int) Address::getFirstCustomerAddressId((int) ($customer->id));
+            $context->cart->id_address_invoice = (int) Address::getFirstCustomerAddressId((int) ($customer->id));
+        }
+        $context->cart->id_customer = (int) $customer->id;
+
+        if (isset($idCarrier) && $idCarrier) {
+            $deliveryOption = [$context->cart->id_address_delivery => $idCarrier.','];
+            $context->cart->setDeliveryOption($deliveryOption);
+        }
+
+        $context->cart->save();
+        $context->cookie->id_cart = (int) $context->cart->id;
+        $context->cookie->write();
+        $context->cart->autosetProductAddress();
     }
 
 }
