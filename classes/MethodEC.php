@@ -764,6 +764,7 @@ class MethodEC extends AbstractMethodPaypal
                 break;
             }
         }
+        $environment = (Configuration::get('PAYPAL_SANDBOX')?'sandbox':'live');
 
         $context->smarty->assign(array(
             'action_url_paypal' => urlencode($context->link->getModuleLink($this->name, 'ecInit', array('credit_card'=>'0'), true)),
@@ -773,6 +774,9 @@ class MethodEC extends AbstractMethodPaypal
             'advantages' => Configuration::get('PAYPAL_API_ADVANTAGES'),
             'is_virtual' => $is_virtual,
             'card_active' => Configuration::get('PAYPAL_API_CARD'),
+            'environment' => $environment,
+            'merchant_id' => Configuration::get('PAYPAL_MERCHANT_ID_'.Tools::strtoupper($environment)),
+            'url_token'   => urlencode($context->link->getModuleLink($this->name, 'ecInit', array('credit_card'=>'0','getToken'=>1), true)),
         ));
 
 

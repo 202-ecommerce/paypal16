@@ -13,11 +13,11 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
-$(document).ready(function(){
+/*$(document).ready(function(){
     if ($('.payment_module').length > 0) {
         initPaypalBraintree();
     }
-});
+});*/
 
 function initPaypalBraintree() {
     var paypal_bt_form = document.querySelector('#paypal-braintree-form');

@@ -82,4 +82,13 @@
         cvv:"{l s='CVV' mod='paypal'}",
         empty_nonce:"{l s='Click paypal button first' mod='paypal'}"
     };
+
+    initBraintreeCard();
+
 </script>
+
+{if $paypal_active}
+    <script>
+    initPaypalBraintree();
+    </script>
+{/if}

@@ -553,17 +553,11 @@ class PayPal extends PaymentModule
                 }
             }
             if (Configuration::get('PAYPAL_METHOD') == 'EC' && Configuration::get('PAYPAL_EXPRESS_CHECKOUT_SHORTCUT') && isset($this->context->cookie->paypal_ecs)) {
-                $this->context->controller->addJS('modules/' . $this->name . '/views/js/ec_shortcut_payment.js');
+                $this->context->controller->addJS($this->_path.'views/js/ec_shortcut_payment.js');
             }
             if (Configuration::get('PAYPAL_METHOD') == 'EC' && Configuration::get('PAYPAL_EC_IN_CONTEXT')) {
-                $environment = (Configuration::get('PAYPAL_SANDBOX')?'sandbox':'live');
-                Media::addJsDef(array(
-                    'environment' => $environment,
-                    'merchant_id' => Configuration::get('PAYPAL_MERCHANT_ID_'.Tools::strtoupper($environment)),
-                    'url_token'   => $this->context->link->getModuleLink($this->name, 'ecInit', array('credit_card'=>'0','getToken'=>1), true),
-                ));
                 $this->context->controller->addJS('https://www.paypalobjects.com/api/checkout.js');
-                $this->context->controller->addJS('modules/' . $this->name . '/views/js/ec_in_context.js');
+                $this->context->controller->addJS($this->_path.'views/js/ec_in_context.js');
             }
             if (Configuration::get('PAYPAL_METHOD') == 'PPP' && Configuration::get('PAYPAL_PLUS_ENABLED')) {
                 $this->context->controller->addJS('https://www.paypalobjects.com/webstatic/ppplus/ppplus.min.js');

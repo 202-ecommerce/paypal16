@@ -13,11 +13,7 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
-    $(document).ready(function(){
-        if ($('.payment_module').length > 0) {
-            initBraintreeCard();
-        }
-    });
+
 
 
     function initBraintreeCard() {
