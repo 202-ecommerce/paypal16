@@ -44,12 +44,7 @@
     <div class="paypal-braintree-row-payment">
         <div class="payment_module paypal-braintree">
             <form action="{$braintreeSubmitUrl|escape:'htmlall':'UTF-8'|urldecode}" id="paypal-braintree-form" method="post">
-                {if !$is_virtual}
-                    <p>{l s='Benefit from many PayPal advantages such as :' mod='paypal'}</p>
-                    <p><img src="{$path|escape:'htmlall':'UTF-8'}/views/img/protected.png" style="height: 43px; padding-right: 10px;">{l s='Your orders are protected' mod='paypal'}*</p>
-                    <p><img src="{$path|escape:'htmlall':'UTF-8'}/views/img/refund.png" style=" height: 43px; padding-right: 10px;">{l s='Return shipping refunded' mod='paypal'}*</p>
-                    <p><i>{l s='* See conditions on PayPal website' mod='paypal'}</i></p>
-                {/if}
+                {include file="./payment_infos.tpl"}
                 <input type="hidden" name="payment_method_nonce" id="paypal_payment_method_nonce"/>
                 <input type="hidden" name="payment_method_bt" value="paypal-braintree"/>
                 <div id="paypal-button"></div>

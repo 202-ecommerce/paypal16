@@ -535,7 +535,7 @@ class PayPal extends PaymentModule
 
     public function hookHeader()
     {
-        if (Tools::getValue('controller') == "order") {
+        if (Tools::getValue('controller') == "order" || Tools::getValue('controller') == "orderopc") {
             if (Configuration::get('PAYPAL_METHOD') == 'BT') {
                 if (Configuration::get('PAYPAL_BRAINTREE_ENABLED')) {
                     $this->context->controller->addJqueryPlugin('fancybox');
@@ -567,7 +567,7 @@ class PayPal extends PaymentModule
             }
             if (Configuration::get('PAYPAL_METHOD') == 'PPP' && Configuration::get('PAYPAL_PLUS_ENABLED')) {
                 $this->context->controller->addJS('https://www.paypalobjects.com/webstatic/ppplus/ppplus.min.js');
-                $this->context->controller->addJS('modules/' . $this->name . '/views/js/payment_ppp.js');
+                $this->context->controller->addJS($this->_path.'views/js/payment_ppp.js');
                 $this->context->controller->addJqueryPlugin('fancybox');
             }
         }
@@ -762,7 +762,6 @@ class PayPal extends PaymentModule
             $secure_key,
             $shop
         );
-
         if (Tools::version_compare(_PS_VERSION_, '1.7.1.0', '>')) {
             $order = Order::getByCartId($id_cart);
         } else {
@@ -1130,7 +1129,7 @@ class PayPal extends PaymentModule
         return $tab;
     }
 
-    protected function getBaseLink()
+    public function getBaseLink()
     {
         static $force_ssl = null;
 

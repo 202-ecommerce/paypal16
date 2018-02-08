@@ -205,7 +205,7 @@ class MethodPPP extends AbstractMethodPaypal
                 'label' => $module->l('Shop logo field'),
                 'name' => 'ppp_config_logo',
                 'hint' => $module->l('Leave it empty to use your default shop logo'),
-                'thumb' => file_exists(_PS_MODULE_DIR_.'paypal/views/img/ppp_logo.png')?Context::getContext()->link->getBaseLink().'modules/paypal/views/img/ppp_logo.png':''
+                'thumb' => file_exists(_PS_MODULE_DIR_.'paypal/views/img/ppp_logo.png')?$module->getBaseLink().'modules/paypal/views/img/ppp_logo.png':''
             ),
             array(
                 'type' => $btn_mode,
@@ -239,10 +239,10 @@ class MethodPPP extends AbstractMethodPaypal
 
         $context = Context::getContext();
         $context->smarty->assign(array(
-            'need_rounding' => ((Configuration::get('PS_ROUND_TYPE') == Order::ROUND_ITEM) || (Configuration::get('PS_PRICE_ROUND_MODE') != PS_ROUND_HALF_DOWN) ? 0 : 1),
+            'need_rounding' => ((Configuration::get('PS_ROUND_TYPE') == Configuration::get('PS_ROUND_TYPE')) || (Configuration::get('PS_PRICE_ROUND_MODE') != PS_ROUND_HALF_DOWN) ? 0 : 1),
             'ppp_active' => Configuration::get('PAYPAL_PLUS_ENABLED'),
         ));
-        if ((Configuration::get('PS_ROUND_TYPE') != Order::ROUND_ITEM) || (Configuration::get('PS_PRICE_ROUND_MODE') != PS_ROUND_HALF_DOWN))  {
+        if ((Configuration::get('PS_ROUND_TYPE') != Configuration::get('PS_ROUND_TYPE')) || (Configuration::get('PS_PRICE_ROUND_MODE') != PS_ROUND_HALF_DOWN))  {
             $params['block_info'] = $module->display(_PS_MODULE_DIR_.$module->name, 'views/templates/admin/block_info.tpl');
         }
 
@@ -550,6 +550,35 @@ class MethodPPP extends AbstractMethodPaypal
 
     public function setPaymentVariables($params)
     {
+        $context = Context::getContext();
+        try {
+            $result = $this->init(true);
+            $context->cookie->__set('paypal_plus_payment', $result['payment_id']);
+        } catch (Exception $e) {
+            return false;
+        }
 
+        $is_virtual = 0;
+        foreach ($params['cart']->getProducts() as $key => $product) {
+            if ($product['is_virtual']) {
+                $is_virtual = 1;
+                break;
+            }
+        }
+
+        $address_invoice = new Address($context->cart->id_address_invoice);
+        $country_invoice = new Country($address_invoice->id_country);
+
+        $context->smarty->assign(array(
+            'pppSubmitUrl'=> urlencode($context->link->getModuleLink('paypal', 'pppValidation', array(), true)),
+            'approval_url_ppp' => urlencode($result['approval_url']),
+            'ppp_language_iso_code' =>  $context->language->iso_code,
+            'ppp_country_iso_code' => $country_invoice->iso_code,
+            'path' => '/modules/'.$this->name,
+            'ajax_patch_url' => urlencode($context->link->getModuleLink('paypal', 'pppPatch', array(), true)),
+            'advantages' => Configuration::get('PAYPAL_API_ADVANTAGES'),
+            'is_virtual' => $is_virtual,
+            'mode' => Configuration::get('PAYPAL_SANDBOX')  ? 'sandbox' : 'live',
+        ));
     }
 }

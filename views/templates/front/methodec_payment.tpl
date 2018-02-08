@@ -4,12 +4,7 @@
         <img src="{$path|escape:'htmlall':'UTF-8'}/views/img/paypal_sm.png" alt="{l s='Pay with Paypal' mod='paypal'}">
         {l s='Pay with Paypal' mod='paypal'}{if $advantages} | {l s='It\'s easy, simple and secure' mod='paypal'}{/if}
     </a>
-    {if !$is_virtual}
-        <p>{l s='Benefit from many PayPal advantages such as :' mod='paypal'}</p>
-        <p><img src="{$path|escape:'htmlall':'UTF-8'}/views/img/protected.png" style="height: 43px; padding-right: 10px;">{l s='Your orders are protected' mod='paypal'}*</p>
-        <p><img src="{$path|escape:'htmlall':'UTF-8'}/views/img/refund.png" style=" height: 43px; padding-right: 10px;">{l s='Return shipping refunded' mod='paypal'}*</p>
-        <p><i>{l s='* See conditions on PayPal website' mod='paypal'}</i></p>
-    {/if}
+    {include file="./payment_infos.tpl"}
 </p>
 {if $card_active}
 <p class="payment_module">
