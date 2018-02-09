@@ -551,12 +551,15 @@ class PayPal extends PaymentModule
                     $this->context->controller->addJS($this->_path.'views/js/payment_pbt.js', 'all');
                 }
             }
-            if (Configuration::get('PAYPAL_METHOD') == 'EC' && Configuration::get('PAYPAL_EXPRESS_CHECKOUT_SHORTCUT') && isset($this->context->cookie->paypal_ecs)) {
-                $this->context->controller->addJS($this->_path.'views/js/ec_shortcut_payment.js');
-            }
-            if (Configuration::get('PAYPAL_METHOD') == 'EC' && Configuration::get('PAYPAL_EC_IN_CONTEXT')) {
-                $this->context->controller->addJS('https://www.paypalobjects.com/api/checkout.js');
-                $this->context->controller->addJS($this->_path.'views/js/ec_in_context.js');
+            if (Configuration::get('PAYPAL_METHOD') == 'EC') {
+                $this->context->controller->addCSS($this->_path.'views/css/paypal-ec.css', 'all');
+                if (Configuration::get('PAYPAL_EXPRESS_CHECKOUT_SHORTCUT') && isset($this->context->cookie->paypal_ecs)) {
+                    $this->context->controller->addJS($this->_path.'views/js/ec_shortcut_payment.js');
+                }
+                if (Configuration::get('PAYPAL_EC_IN_CONTEXT')) {
+                    $this->context->controller->addJS('https://www.paypalobjects.com/api/checkout.js');
+                    $this->context->controller->addJS($this->_path.'views/js/ec_in_context.js');
+                }
             }
             if (Configuration::get('PAYPAL_METHOD') == 'PPP') {
                 $this->context->controller->addCSS($this->_path.'views/css/paypal-plus.css', 'all');
@@ -804,39 +807,44 @@ class PayPal extends PaymentModule
         }
 
         if (Tools::getValue('not_payed_capture')) {
-            $paypal_msg .= $this->displayConfirmation(
+            $paypal_msg .= $this->displayWarning(
                 '<p class="paypal-warning">'.$this->l('You couldn\'t refund order, it\'s not payed yet.').'</p>'
             );
         }
         if (Tools::getValue('error_refund')) {
-            $paypal_msg .= $this->displayConfirmation(
+            $paypal_msg .= $this->displayWarning(
                 '<p class="paypal-warning">'.$this->l('We have unexpected problem during refund operation. See massages for more details').'</p>'
             );
         }
         if (Tools::getValue('cancel_failed')) {
-            $paypal_msg .= $this->displayConfirmation(
+            $paypal_msg .= $this->displayWarning(
                 '<p class="paypal-warning">'.$this->l('We have unexpected problem during cancel operation. See massages for more details').'</p>'
             );
         }
         if ($order->current_state == Configuration::get('PS_OS_REFUND') &&  $paypal_order->payment_status == 'Refunded') {
-            $paypal_msg .= $this->displayConfirmation(
+            $paypal_msg .= $this->displayWarning(
                 '<p class="paypal-warning">'.$this->l('Your order is fully refunded by PayPal.').'</p>'
             );
         }
         if ($order->current_state == Configuration::get('PS_OS_PAYMENT') && Validate::isLoadedObject($paypal_capture) && $paypal_capture->id_capture) {
-            $paypal_msg .= $this->displayConfirmation(
+            $paypal_msg .= $this->displayWarning(
                 '<p class="paypal-warning">'.$this->l('Your order is fully captured by PayPal.').'</p>'
             );
         }
         if (Tools::getValue('error_capture')) {
-            $paypal_msg .= $this->displayConfirmation(
+            $paypal_msg .= $this->displayWarning(
                 '<p class="paypal-warning">'.$this->l('We have unexpected problem during capture operation. See massages for more details').'</p>'
+            );
+        }
+        if (Tools::getValue('depracated_method')) {
+            $paypal_msg .= $this->displayWarning(
+                '<p class="paypal-warning">'.$this->l('Payments done with PayPal Integral Evolution can be changed via PayPal dashboard').'</p>'
             );
         }
 
         if ($paypal_order->total_paid != $paypal_order->total_prestashop) {
             $preferences = $this->context->link->getAdminLink('AdminPreferences', true);
-            $paypal_msg .= $this->displayConfirmation('<p class="paypal-warning">'.$this->l('Product pricing has been modified as your rounding settings aren\'t compliant with PayPal.').' '.
+            $paypal_msg .= $this->displayWarning('<p class="paypal-warning">'.$this->l('Product pricing has been modified as your rounding settings aren\'t compliant with PayPal.').' '.
                 $this->l('To avoid automatic rounding to customer for PayPal payments, please update your rounding settings.').' '.
                 '<a target="_blank" href="'.$preferences.'">'.$this->l('Reed more.').'</a></p>'
             );
@@ -854,30 +862,19 @@ class PayPal extends PaymentModule
         }
     }
 
-    public function createOrderThread($id_order)
-    {
-        $orderThread = new CustomerThread();
-        $orderThread->id_shop = $this->context->shop->id;
-        $orderThread->id_lang = $this->context->language->id;
-        $orderThread->id_contact = 0;
-        $orderThread->id_order = $id_order;
-        $orderThread->id_customer = $this->context->customer->id;
-        $orderThread->status = 'open';
-        $orderThread->email = $this->context->customer->email;
-        $orderThread->token = Tools::passwdGen(12);
-        $orderThread->add();
-        return (int)$orderThread->id;
-    }
-
-
     public function hookActionOrderStatusUpdate(&$params)
     {
+
         $paypal_order = PaypalOrder::loadByOrderId($params['id_order']);
+
         if (!Validate::isLoadedObject($paypal_order)) {
             return false;
         }
+        if ($paypal_order->payment_method == 'HSS') {
+            Tools::redirect($_SERVER['HTTP_REFERER'].'&depracated_method=1');
+        }
         $method = AbstractMethodPaypal::load($paypal_order->method);
-        $orderMessage = new CustomerMessage();
+        $orderMessage = new Message();
         $orderMessage->message = "";
         $ex_detailed_message = '';
         if ($params['newOrderStatus']->id == Configuration::get('PS_OS_CANCELED')) {
@@ -905,12 +902,11 @@ class PayPal extends PaymentModule
                 foreach ($response_void as $key => $msg) {
                     $orderMessage->message .= $key." : ".$msg.";\r";
                 }
-                $orderMessage->id_customer_thread = $this->createOrderThread($params['id_order']);
                 $orderMessage->id_order = $params['id_order'];
                 $orderMessage->id_customer = $this->context->customer->id;
                 $orderMessage->private = 1;
                 if ($orderMessage->message) {
-                    $orderMessage->save();
+                    $orderMessage->add();
                 }
                 Tools::redirect($_SERVER['HTTP_REFERER'].'&cancel_failed=1');
             }
@@ -922,12 +918,11 @@ class PayPal extends PaymentModule
                     $orderMessage->message .= $key." : ".$msg.";\r";
                 }
             }
-            $orderMessage->id_customer_thread = $this->createOrderThread($params['id_order']);
             $orderMessage->id_order = $params['id_order'];
             $orderMessage->id_customer = $this->context->customer->id;
             $orderMessage->private = 1;
             if ($orderMessage->message) {
-                $orderMessage->save();
+                $orderMessage->add();
             }
         }
 
@@ -935,12 +930,11 @@ class PayPal extends PaymentModule
             $capture = PaypalCapture::loadByOrderPayPalId($paypal_order->id);
             if (Validate::isLoadedObject($capture) && !$capture->id_capture) {
                 $orderMessage = new Message();
-                $orderMessage->id_customer_thread = $this->createOrderThread($params['id_order']);
                 $orderMessage->message = $this->l('You couldn\'t refund order, it\'s not payed yet.');
                 $orderMessage->id_order = $params['id_order'];
                 $orderMessage->id_customer = $this->context->customer->id;
                 $orderMessage->private = 1;
-                $orderMessage->save();
+                $orderMessage->add();
                 Tools::redirect($_SERVER['HTTP_REFERER'].'&not_payed_capture=1');
             }
             $status = '';
@@ -1000,14 +994,12 @@ class PayPal extends PaymentModule
                     $orderMessage->message .= $key." : ".$msg.";\r";
                 }
             }
-            $orderMessage->id_customer_thread = $this->createOrderThread($params['id_order']);
             $orderMessage->id_order = $params['id_order'];
-            $orderMessage->id_customer = $this->context->customer->id;
             $orderMessage->private = 1;
+            $orderMessage->id_customer = $this->context->customer->id;
             if ($orderMessage->message) {
-                $orderMessage->save();
+                $orderMessage->add();
             }
-
             if (!isset($refund_response['already_refunded']) && !isset($refund_response['success'])) {
                 Tools::redirect($_SERVER['HTTP_REFERER'].'&error_refund=1');
             }
@@ -1041,12 +1033,11 @@ class PayPal extends PaymentModule
                 }
             }
 
-            $orderMessage->id_customer_thread = $this->createOrderThread($params['id_order']);
             $orderMessage->id_order = $params['id_order'];
             $orderMessage->id_customer = $this->context->customer->id;
             $orderMessage->private = 1;
             if ($orderMessage->message) {
-                $orderMessage->save();
+                $orderMessage->add();
             }
 
             if (!isset($capture_response['already_captured']) && !isset($capture_response['success'])) {

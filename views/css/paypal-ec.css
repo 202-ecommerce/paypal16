@@ -1,0 +1,21 @@
+.paypal-ec {
+    background: #fcfbfb;
+    padding: 15px;
+    border: 1px solid #d6d4d4;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    border-radius: 4px;
+}
+.paypal-ec p.head {
+    display: block;
+    font-size: 17px;
+    line-height: 23px;
+    color: #333;
+    font-weight: bold;
+    letter-spacing: -1px;
+    position: relative;
+}
+.paypal-ec .payment_module a {
+    border : none;
+    padding: 0;
+}

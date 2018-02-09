@@ -136,7 +136,7 @@ function upgrade_module_4_3_2($module)
                 'id_transaction' => $order['id_transaction'],
                 'id_payment' => $order['nonce_payment_token'],
                 'client_token' => $order['client_token'],
-                'payment_method' => '',
+                'payment_method' => $order['payment_method'] == 2 ? 'HSS' : '',
                 'currency' => $order['currency'],
                 'total_paid' => $order['total_paid'],
                 'payment_status' => $order['payment_status'],
