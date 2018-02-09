@@ -254,7 +254,7 @@ class PayPal extends PaymentModule
             || !$this->registerHook('displayBackOfficeHeader')
             || !$this->registerHook('displayFooterProduct')
             || !$this->registerHook('actionBeforeCartUpdateQty')
-            || !$this->registerHook('displayInvoiceLegalFreeText')
+            || !$this->registerHook('displayPDFInvoice')
             || !$this->registerHook('displayPaymentEU')
         ) {
             return false;
