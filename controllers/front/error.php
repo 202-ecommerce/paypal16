@@ -43,8 +43,7 @@ class PaypalErrorModuleFrontController extends ModuleFrontController
         $this->context->smarty->assign(array(
             'error_paypal' => $error_message,
         ));
-        $paypal = Module::getInstanceByName('paypal');
-        $paypal->display('paypal', 'views/templates/front/payment_error.tpl');
+        $this->setTemplate('payment_error.tpl');
     }
 
     public function getErrorMsg($error_code)

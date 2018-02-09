@@ -1,8 +1,46 @@
-<p class="payment_module">
-    <a href="#" title="{l s='Pay with card' mod='paypal'}">
-        <img src="{$path|escape:'htmlall':'UTF-8'}/views/img/mini-cards.png" alt="{l s='Pay with card' mod='paypal'}">
-        {l s='Pay with card' mod='paypal'}
-    </a>
+{if $version16}
+<div class="row">
+    <div class="col-xs-12 col-md-6">
+        <div class="braintree-row-payment">
+        <p class="payment_module braintree-card">
+            <p class="head"><img src="{$path|escape:'htmlall':'UTF-8'}/views/img/mini-cards.png" alt="{l s='Pay with card' mod='paypal'}">
+                {l s='Pay with card' mod='paypal'}</p>
+            <form action="{$braintreeSubmitUrl|escape:'htmlall':'UTF-8'|urldecode}" id="braintree-form" method="post">
+                <div id="block-card-number" class="block_field">
+                    <div id="card-number" class="hosted_field"><div id="card-image"></div></div>
+
+                </div>
+
+                <div id="block-expiration-date" class="block_field half_block_field">
+                    <div id="expiration-date" class="hosted_field"></div>
+                </div>
+
+                <div id="block-cvv" class="block_field half_block_field">
+                    <div id="cvv" class="hosted_field"></div>
+                </div>
+
+                <input type="hidden" name="deviceData" id="deviceData"/>
+                <input type="hidden" name="client_token" value="{$braintreeToken}">
+                <input type="hidden" name="liabilityShifted" id="liabilityShifted"/>
+                <input type="hidden" name="liabilityShiftPossible" id="liabilityShiftPossible"/>
+                <input type="hidden" name="payment_method_nonce" id="payment_method_nonce"/>
+                <input type="hidden" name="card_type" id="braintree_card_type"/>
+                <input type="hidden" name="payment_method_bt" value="card-braintree"/>
+                <div class="paypal_clear"></div>
+                <input type="submit" value="{l s='Pay' mod='paypal'}"  id="braintree_submit"/>
+                <div id="bt-card-error-msg"></div>
+                <div id="logo_braintree_by_paypal"><img src="https://s3-us-west-1.amazonaws.com/bt-partner-assets/paypal-braintree.png" height="20px"></div>
+            </form>
+        </p>
+        </div>
+    </div>
+</div>
+{else}
+    <p class="payment_module">
+        <a href="#" title="{l s='Pay with card' mod='paypal'}">
+            <img src="{$path|escape:'htmlall':'UTF-8'}/views/img/mini-cards.png" alt="{l s='Pay with card' mod='paypal'}">
+            {l s='Pay with card' mod='paypal'}
+        </a>
     <div class="braintree-row-payment">
         <div class="payment_module braintree-card">
             <form action="{$braintreeSubmitUrl|escape:'htmlall':'UTF-8'|urldecode}" id="braintree-form" method="post">
@@ -33,27 +71,50 @@
             </form>
         </div>
     </div>
-</p>
-
+    </p>
+{/if}
 {if $paypal_active}
-<p class="payment_module">
-    <a href="{$action_url_card|escape:'htmlall':'UTF-8'|urldecode}" title="{l s='Pay with paypal' mod='paypal'}">
-        <img src="{$path|escape:'htmlall':'UTF-8'}/views/img/paypal_sm.png" alt="{l s='Pay with paypal' mod='paypal'}">
-        {l s='Pay with paypal' mod='paypal'}{if $advantages} | {l s='It\'s easy, simple and secure' mod='paypal'}{/if}
-    </a>
-    <div class="paypal-braintree-row-payment">
+{if $version16}
+    <div class="row">
+    <div class="paypal-braintree-row-payment col-xs-12 col-md-6">
         <div class="payment_module paypal-braintree">
-            <form action="{$braintreeSubmitUrl|escape:'htmlall':'UTF-8'|urldecode}" id="paypal-braintree-form" method="post">
-                {include file="./payment_infos.tpl"}
-                <input type="hidden" name="payment_method_nonce" id="paypal_payment_method_nonce"/>
-                <input type="hidden" name="payment_method_bt" value="paypal-braintree"/>
-                <div id="paypal-button"></div>
-                <div id="paypal-vault-info"><p>{l s='You have to finish your payment done with your account PayPal:' mod='paypal'}</p></div>
-            </form>
-            <div id="bt-paypal-error-msg"></div>
+            <p class="payment_module">
+                <p class="head">
+                    <img src="{$path|escape:'htmlall':'UTF-8'}/views/img/paypal_sm.png" alt="{l s='Pay with paypal' mod='paypal'}">
+                    {l s='Pay with paypal' mod='paypal'}{if $advantages} | {l s='It\'s easy, simple and secure' mod='paypal'}{/if}
+                </p>
+                <form action="{$braintreeSubmitUrl|escape:'htmlall':'UTF-8'|urldecode}" id="paypal-braintree-form" method="post">
+                    {include file="./payment_infos.tpl"}
+                    <input type="hidden" name="payment_method_nonce" id="paypal_payment_method_nonce"/>
+                    <input type="hidden" name="payment_method_bt" value="paypal-braintree"/>
+                    <div id="paypal-button"></div>
+                    <div id="paypal-vault-info"><p>{l s='You have to finish your payment done with your account PayPal:' mod='paypal'}</p></div>
+                </form>
+                <div id="bt-paypal-error-msg"></div>
+            </p>
         </div>
     </div>
-</p>
+    </div>
+{else}
+    <p class="payment_module">
+        <a title="{l s='Pay with paypal' mod='paypal'}">
+            <img src="{$path|escape:'htmlall':'UTF-8'}/views/img/paypal_sm.png" alt="{l s='Pay with paypal' mod='paypal'}">
+            {l s='Pay with paypal' mod='paypal'}{if $advantages} | {l s='It\'s easy, simple and secure' mod='paypal'}{/if}
+        </a>
+        <div class="paypal-braintree-row-payment">
+            <div class="payment_module paypal-braintree">
+                <form action="{$braintreeSubmitUrl|escape:'htmlall':'UTF-8'|urldecode}" id="paypal-braintree-form" method="post">
+                    {include file="./payment_infos.tpl"}
+                    <input type="hidden" name="payment_method_nonce" id="paypal_payment_method_nonce"/>
+                    <input type="hidden" name="payment_method_bt" value="paypal-braintree"/>
+                    <div id="paypal-button"></div>
+                    <div id="paypal-vault-info"><p>{l s='You have to finish your payment done with your account PayPal:' mod='paypal'}</p></div>
+                </form>
+            <div id="bt-paypal-error-msg"></div>
+            </div>
+        </div>
+    </p>
+{/if}
 {/if}
 
 <script>

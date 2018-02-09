@@ -350,6 +350,7 @@ class MethodBT extends AbstractMethodPaypal
             $order_state = Configuration::get('PAYPAL_BRAINTREE_OS_AWAITING');
         }
         $paypal->validateOrder(context::getContext()->cart->id, $order_state, $transaction->amount, 'Braintree', $paypal->l('Payment accepted.'), $transactionDetail, context::getContext()->cart->id_currency, false, context::getContext()->customer->secure_key);
+        return true;
     }
 
     public function getDetailsTransaction($transaction)
@@ -631,6 +632,7 @@ class MethodBT extends AbstractMethodPaypal
             'check3Dsecure'=> $check3DS,
             'is_virtual' => $is_virtual,
             'mode' => $this->mode == 'SANDBOX' ? Tools::strtolower($this->mode) : 'production',
+            'version16' => version_compare(_PS_VERSION_, '1.6', '>=') ? 1 : 0,
         ));
 
     }

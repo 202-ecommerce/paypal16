@@ -776,6 +776,7 @@ class MethodEC extends AbstractMethodPaypal
             'environment' => $environment,
             'merchant_id' => Configuration::get('PAYPAL_MERCHANT_ID_'.Tools::strtoupper($environment)),
             'url_token'   => urlencode($context->link->getModuleLink($this->name, 'ecInit', array('credit_card'=>'0','getToken'=>1), true)),
+            'version16' => version_compare(_PS_VERSION_, '1.6', '>=') ? 1 : 0,
         ));
 
         if (Configuration::get('PAYPAL_EXPRESS_CHECKOUT_SHORTCUT') && isset($context->cookie->paypal_ecs)) {

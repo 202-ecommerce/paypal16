@@ -34,7 +34,7 @@ class PaypalPppPatchModuleFrontController extends ModuleFrontController
         if (Context::getContext()->cookie->paypal_plus_payment) {
             try {
                 $method_ppp->doPatch();
-                echo Tools::jsonEncode(array('success' => true));
+                die(Tools::jsonEncode(array('success' => true)));
             } catch (Exception $e) {
                 die($e->getMessage());
             }

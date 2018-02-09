@@ -558,10 +558,13 @@ class PayPal extends PaymentModule
                 $this->context->controller->addJS('https://www.paypalobjects.com/api/checkout.js');
                 $this->context->controller->addJS($this->_path.'views/js/ec_in_context.js');
             }
-            if (Configuration::get('PAYPAL_METHOD') == 'PPP' && Configuration::get('PAYPAL_PLUS_ENABLED')) {
-                $this->context->controller->addJS('https://www.paypalobjects.com/webstatic/ppplus/ppplus.min.js');
-                $this->context->controller->addJS($this->_path.'views/js/payment_ppp.js');
-                $this->context->controller->addJqueryPlugin('fancybox');
+            if (Configuration::get('PAYPAL_METHOD') == 'PPP') {
+                $this->context->controller->addCSS($this->_path.'views/css/paypal-plus.css', 'all');
+                if (Configuration::get('PAYPAL_PLUS_ENABLED')) {
+                    $this->context->controller->addJS('https://www.paypalobjects.com/webstatic/ppplus/ppplus.min.js');
+                    $this->context->controller->addJS($this->_path.'views/js/payment_ppp.js');
+                    $this->context->controller->addJqueryPlugin('fancybox');
+                }
             }
         }
     }
@@ -695,11 +698,11 @@ class PayPal extends PaymentModule
         if (!Validate::isLoadedObject($paypal_order)) {
             return;
         }
-
-
         $this->context->smarty->assign(array(
             'transaction_id' => $paypal_order->id_transaction,
             'method' => $paypal_order->method,
+            'reference' => $params['objOrder']->reference,
+            'total_paid' => Tools::displayPrice((float)$paypal_order->total_paid, $this->context->currency),
         ));
         if($paypal_order->method == 'PPP' && $paypal_order->payment_tool == 'PAY_UPON_INVOICE')
         {
@@ -729,6 +732,7 @@ class PayPal extends PaymentModule
     public function validateOrder($id_cart, $id_order_state, $amount_paid, $payment_method = 'Unknown', $message = null, $transaction = array(), $currency_special = null, $dont_touch_amount = false, $secure_key = false, Shop $shop = null)
     {
         $this->amount_paid_paypal = (float)$amount_paid;
+
         $cart = new Cart((int) $id_cart);
         $total_ps = (float)$cart->getOrderTotal(true, Cart::BOTH);
         if ($amount_paid > $total_ps+0.10 || $amount_paid < $total_ps-0.10) {
@@ -752,7 +756,6 @@ class PayPal extends PaymentModule
             $id_order = Order::getOrderByCartId($id_cart);
             $order = new Order($id_order);
         }
-
         if (isset($amount_paid) && $amount_paid != 0 && $order->total_paid != $amount_paid) {
             $order->total_paid = $amount_paid;
             $order->total_paid_real = $amount_paid;
@@ -779,7 +782,6 @@ class PayPal extends PaymentModule
         $paypal_order->method = $transaction['method'];
         $paypal_order->payment_tool = isset($transaction['payment_tool']) ? $transaction['payment_tool'] : '';
         $paypal_order->save();
-
 
         if ($transaction['capture']) {
             $paypal_capture = new PaypalCapture();

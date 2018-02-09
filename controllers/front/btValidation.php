@@ -32,13 +32,18 @@ class PaypalBtValidationModuleFrontController extends ModuleFrontController
 
     public function postProcess()
     {
-        $paypal = Module::getInstanceByName('paypal');
         $method_bt = AbstractMethodPaypal::load('BT');
-        $method_bt->validation();
+        $paypal = Module::getInstanceByName('paypal');
+        try {
+            $method_bt->validation();
+        } catch (Exception $e) {
+            Tools::redirect(Context::getContext()->link->getModuleLink('paypal', 'error', array('error_code' => $e->getCode())));
+        }
 
         $cart = Context::getContext()->cart;
         $customer = new Customer($cart->id_customer);
-
-        Tools::redirect('index.php?controller=order-confirmation&id_cart='.$cart->id.'&id_module='.$paypal->id.'&id_order='.$paypal->currentOrder.'&key='.$customer->secure_key);
+        $id_order = Order::getOrderByCartId($cart->id);
+        $order = new Order($id_order);
+        Tools::redirect('index.php?controller=order-confirmation&id_cart='.$cart->id.'&id_module='.$paypal->id.'&id_order='.$order->id.'&key='.$customer->secure_key);
     }
 }

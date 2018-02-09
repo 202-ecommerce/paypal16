@@ -29,14 +29,16 @@
     {$error_msg}
 </div>
 {/if}
-<li id="paypal_transaction_id">
+<div id="paypal_transaction_id">
+    {l s='Your order ID is' mod='paypal'} : {$reference} <br />
+    {l s='Total of the transaction (taxes incl.)' mod='paypal'} : {$total_paid}<br />
     {if $method == 'BT'}
-        {l s='Braintree transaction id :' mod='paypal'}
+        {l s='Braintree transaction id' mod='paypal'} :
     {else}
-        {l s='Paypal transaction id :' mod='paypal'}
+        {l s='Paypal transaction id' mod='paypal'} :
     {/if}
-    {$transaction_id}
-</li>
+    {$transaction_id} <br />
+</div>
 {if isset($ppp_information)}
     <dl>
         <dd>

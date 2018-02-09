@@ -12,7 +12,7 @@
  * @license   http://addons.prestashop.com/en/content/12-terms-and-conditions-of-use
  * International Registered Trademark & Property of PrestaShop SA
  */
-$(document).ready(function() {
+
 
     exec_ppp_payment = true;
     function doPatchPPP() {
@@ -43,6 +43,6 @@ $(document).ready(function() {
             });
         }
     }
-});
+
 
 

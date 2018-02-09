@@ -579,6 +579,7 @@ class MethodPPP extends AbstractMethodPaypal
             'advantages' => Configuration::get('PAYPAL_API_ADVANTAGES'),
             'is_virtual' => $is_virtual,
             'mode' => Configuration::get('PAYPAL_SANDBOX')  ? 'sandbox' : 'live',
+            'version16' => version_compare(_PS_VERSION_, '1.6', '>=') ? 1 : 0,
         ));
     }
 }

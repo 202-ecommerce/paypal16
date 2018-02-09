@@ -24,20 +24,14 @@
 *}
 
 
-
-
 <div class="block-center" id="block-error">
-sdvsdvsdv
-
-                    <h2>{l s='Error in Paypal' mod='paypal'}</h2>
-
-                    <div class="table-responsive-row clearfix">
-                        <p>
-                            {$error_paypal}
-                        </p>
-                    </div>
-
-        </div>
+    <h2>{l s='Error in Paypal' mod='paypal'}</h2>
+    <div class="table-responsive-row clearfix">
+        <p>
+            {$error_paypal}
+        </p>
+    </div>
+</div>
 
 
 
