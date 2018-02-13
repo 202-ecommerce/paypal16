@@ -1,5 +1,5 @@
 /**
- * 2007-2017 PrestaShop
+ * 2007-2018 PrestaShop
  *
  * DISCLAIMER
  *
@@ -8,10 +8,23 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  * @author    PrestaShop SA <contact@prestashop.com>
- * @copyright 2007-2017 PrestaShop SA
+ * @copyright 2007-2018 PrestaShop SA
  * @license   http://addons.prestashop.com/en/content/12-terms-and-conditions-of-use
  * International Registered Trademark & Property of PrestaShop SA
  */
+
+$(document).ready(function(){
+    if (advancedEU) {
+        $(document).on('click', '.payment_module', function(e) {
+            var ppp_el = $(this).parent().find('#paypal-plus-payment');
+            if (ppp_el.length) {               // Clicked element has a #paypal-plus-payment child.
+                ppp_el.parent().stop().show(); // Display paypal options.
+            } else {                           // Clicked element doesn't contain #ppplusDiv child,
+                $(document).find('#paypal-plus-payment').parent().stop().hide(); // thus we can hide paypal options.
+            }
+        });
+    }
+});
 
 
     exec_ppp_payment = true;

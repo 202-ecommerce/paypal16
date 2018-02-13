@@ -582,4 +582,13 @@ class MethodPPP extends AbstractMethodPaypal
             'version16' => version_compare(_PS_VERSION_, '1.6', '>=') ? 1 : 0,
         ));
     }
+
+    public function renderPaymentEU(Paypal $paypal)
+    {
+        return array(
+            'cta_text' => $paypal->l('Pay with PayPal Plus'),
+            'logo' => '/modules/'.$paypal->name.'/views/img/mini-cards.png',
+            'form' => $paypal->display('paypal', 'views/templates/front/'.Tools::strtolower(get_class($this)).'_payment.tpl'),
+        );
+    }
 }

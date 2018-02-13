@@ -787,4 +787,14 @@ class MethodEC extends AbstractMethodPaypal
 
 
     }
+
+    public function renderPaymentEU(Paypal $paypal)
+    {
+        $options[] = array(
+            'cta_text' => $paypal->l('Pay with PayPal'),
+            'logo' => '/modules/'.$paypal->name.'/views/img/paypal_sm.png',
+            'form' => $paypal->display('paypal', 'views/templates/front/'.Tools::strtolower(get_class($this)).'_payment.tpl'),
+        );
+        return $options;
+    }
 }

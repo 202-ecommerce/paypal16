@@ -530,6 +530,14 @@ class PayPal extends PaymentModule
         if ($this->hookPayment($params) == null) {
             return null;
         }
+
+
+        $this->context->smarty->assign(array(
+            'advancedEU'=> true,
+        ));
+
+        $method = AbstractMethodPaypal::load(Configuration::get('PAYPAL_METHOD'));
+        return $method->renderPaymentEU($this);
     }
 
     public function hookHeader()

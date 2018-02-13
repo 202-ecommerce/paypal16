@@ -636,4 +636,9 @@ class MethodBT extends AbstractMethodPaypal
         ));
 
     }
+
+    public function renderPaymentEU(Paypal $paypal)
+    {
+
+    }
 }
