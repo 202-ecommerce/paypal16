@@ -36,54 +36,54 @@ function upgrade_module_4_3_2($module)
     }
 
     $mode = Configuration::get('PAYPAL_SANDBOX') ? 'SANDBOX' : 'LIVE';
-    switch (Configuration::get('PAYPAL_PAYMENT_METHOD')) {
-        case '1':
-        case '4':
-            if (Configuration::get('PAYPAL_API_USER')
-                && Configuration::get('PAYPAL_API_PASSWORD')
-                && Configuration::get('PAYPAL_API_SIGNATURE')) {
-                Configuration::updateValue('PAYPAL_METHOD', 'EC');
-                Configuration::updateValue('PAYPAL_EXPRESS_CHECKOUT', 1);
-                Configuration::updateValue('PAYPAL_USERNAME_'.$mode, Configuration::get('PAYPAL_API_USER'));
-                Configuration::updateValue('PAYPAL_PSWD_'.$mode, Configuration::get('PAYPAL_API_PASSWORD'));
-                Configuration::updateValue('PAYPAL_SIGNATURE_'.$mode, Configuration::get('PAYPAL_API_SIGNATURE'));
-                Configuration::updateValue('PAYPAL_'.$mode.'_ACCESS', 1);
-                if (Configuration::get('PAYPAL_IN_CONTEXT_CHECKOUT_M_ID')) {
-                    Configuration::updateValue('PAYPAL_MERCHANT_ID_'.$mode, Configuration::get('PAYPAL_IN_CONTEXT_CHECKOUT_M_ID'));
-                    Configuration::updateValue('PAYPAL_EC_IN_CONTEXT', 1);
-                }
+    if (Configuration::get('PAYPAL_PAYMENT_METHOD') == 5) {
+        if (Configuration::get('PAYPAL_PLUS_CLIENT_ID') && Configuration::get('PAYPAL_PLUS_SECRET')) {
+            Configuration::updateValue('PAYPAL_'.$mode.'_CLIENTID', Configuration::get('PAYPAL_PLUS_CLIENT_ID'));
+            Configuration::updateValue('PAYPAL_'.$mode.'_SECRET', Configuration::get('PAYPAL_PLUS_SECRET'));
+            Configuration::updateValue('PAYPAL_METHOD', 'PPP');
+            Configuration::updateValue('PAYPAL_PLUS_ENABLED', 1);
+            $experience_web = $module->createWebExperience();
+            if ($experience_web) {
+                Configuration::updateValue('PAYPAL_PLUS_EXPERIENCE', $experience_web->id);
             }
-            break;
-        case '2':
-            break;
-        case '5':
-            if (Configuration::get('PAYPAL_PLUS_CLIENT_ID') && Configuration::get('PAYPAL_PLUS_SECRET')) {
-                Configuration::updateValue('PAYPAL_'.$mode.'_CLIENTID', Configuration::get('PAYPAL_PLUS_CLIENT_ID'));
-                Configuration::updateValue('PAYPAL_'.$mode.'_SECRET', Configuration::get('PAYPAL_PLUS_SECRET'));
-                Configuration::updateValue('PAYPAL_METHOD', 'PPP');
-                Configuration::updateValue('PAYPAL_PLUS_ENABLED', 1);
-                $experience_web = $module->createWebExperience();
-                if ($experience_web) {
-                    Configuration::updateValue('PAYPAL_PLUS_EXPERIENCE', $experience_web->id);
-                }
+        }
+    } elseif (Configuration::get('PAYPAL_BRAINTREE_ENABLED')) {
+        if (Configuration::get('PAYPAL_BRAINTREE_ACCESS_TOKEN')
+            && Configuration::get('PAYPAL_BRAINTREE_EXPIRES_AT')
+            && Configuration::get('PAYPAL_BRAINTREE_REFRESH_TOKEN')
+            && Configuration::get('PAYPAL_BRAINTREE_MERCHANT_ID')) {
+            Configuration::updateValue('PAYPAL_METHOD', 'BT');
+            Configuration::updateValue('PAYPAL_BRAINTREE_ENABLED', 1);
+            Configuration::updateValue('PAYPAL_' . $mode . '_BT_ACCESS_TOKEN', Configuration::get('PAYPAL_BRAINTREE_ACCESS_TOKEN'));
+            Configuration::updateValue('PAYPAL_' . $mode . '_BT_EXPIRES_AT', Configuration::get('PAYPAL_BRAINTREE_EXPIRES_AT'));
+            Configuration::updateValue('PAYPAL_' . $mode . '_BT_REFRESH_TOKEN', Configuration::get('PAYPAL_BRAINTREE_REFRESH_TOKEN'));
+            Configuration::updateValue('PAYPAL_' . $mode . '_BT_MERCHANT_ID', Configuration::get('PAYPAL_BRAINTREE_MERCHANT_ID'));
+            Configuration::updateValue('PAYPAL_BY_BRAINTREE', 1);
+            $method_bt = AbstractMethodPaypal::load('BT');
+            $existing_merchant_accounts = $method_bt->getAllCurrency();
+            $new_merchant_accounts = $method_bt->createForCurrency();
+            $all_merchant_accounts = array_merge((array)$existing_merchant_accounts, (array)$new_merchant_accounts);
+            unset($all_merchant_accounts[0]);
+            if ($all_merchant_accounts) {
+                Configuration::updateValue('PAYPAL_'.$mode.'_BT_ACCOUNT_ID', Tools::jsonEncode($all_merchant_accounts));
             }
-            break;
-        case '6':
-            if (Configuration::get('PAYPAL_BRAINTREE_ACCESS_TOKEN')
-                && Configuration::get('PAYPAL_BRAINTREE_EXPIRES_AT')
-                && Configuration::get('PAYPAL_BRAINTREE_REFRESH_TOKEN')
-                && Configuration::get('PAYPAL_BRAINTREE_MERCHANT_ID')) {
-                Configuration::updateValue('PAYPAL_METHOD', 'BT');
-                Configuration::updateValue('PAYPAL_BRAINTREE_ENABLED', 1);
-                Configuration::updateValue('PAYPAL_' . $mode . '_BT_ACCESS_TOKEN', Configuration::get('PAYPAL_BRAINTREE_ACCESS_TOKEN'));
-                Configuration::updateValue('PAYPAL_' . $mode . '_BT_EXPIRES_AT', Configuration::get('PAYPAL_BRAINTREE_EXPIRES_AT'));
-                Configuration::updateValue('PAYPAL_' . $mode . '_BT_REFRESH_TOKEN', Configuration::get('PAYPAL_BRAINTREE_REFRESH_TOKEN'));
-                Configuration::updateValue('PAYPAL_' . $mode . '_BT_MERCHANT_ID', Configuration::get('PAYPAL_BRAINTREE_MERCHANT_ID'));
-                Configuration::updateValue('PAYPAL_BY_BRAINTREE', 1);
+        }
+    } elseif (Configuration::get('PAYPAL_PAYMENT_METHOD') == 1 || Configuration::get('PAYPAL_PAYMENT_METHOD') == 4) {
+        if (Configuration::get('PAYPAL_API_USER')
+            && Configuration::get('PAYPAL_API_PASSWORD')
+            && Configuration::get('PAYPAL_API_SIGNATURE')) {
+            Configuration::updateValue('PAYPAL_METHOD', 'EC');
+            Configuration::updateValue('PAYPAL_EXPRESS_CHECKOUT', 1);
+            Configuration::updateValue('PAYPAL_USERNAME_'.$mode, Configuration::get('PAYPAL_API_USER'));
+            Configuration::updateValue('PAYPAL_PSWD_'.$mode, Configuration::get('PAYPAL_API_PASSWORD'));
+            Configuration::updateValue('PAYPAL_SIGNATURE_'.$mode, Configuration::get('PAYPAL_API_SIGNATURE'));
+            Configuration::updateValue('PAYPAL_'.$mode.'_ACCESS', 1);
+            if (Configuration::get('PAYPAL_IN_CONTEXT_CHECKOUT_M_ID')) {
+                Configuration::updateValue('PAYPAL_MERCHANT_ID_'.$mode, Configuration::get('PAYPAL_IN_CONTEXT_CHECKOUT_M_ID'));
+                Configuration::updateValue('PAYPAL_EC_IN_CONTEXT', 1);
             }
-            break;
+        }
     }
-
 
     /** @var DbPDOCore $db */
     $db = Db::getInstance();
@@ -108,14 +108,14 @@ function upgrade_module_4_3_2($module)
     $db->Execute($sql);
 
     /** @var DbQueryCore $query */
-    $query = DbQuery();
-    $query->select('*');
+    $query = new DbQuery();
+    $query->select('*, po.id_order as id_order_ps');
     $query->from('orders','po');
     $query->innerJoin('paypal_order','ppo','ppo.id_order = po.id_order');
     $query->leftJoin('paypal_braintree','ppb','ppo.id_order = ppb.id_order');
     $query->leftJoin('paypal_plus_pui','ppp','ppo.id_order = ppp.id_order');
 
-    $results = $db->query($sql);
+    $results = $db->query($query);
 
     $methods = array(
         '1' => 'EC',
@@ -127,11 +127,11 @@ function upgrade_module_4_3_2($module)
 
     /** @var FileLoggerCore $logger */
     $logger = new FileLogger();
-    $logger->setFilename(_PS_ROOT_DIR_,'/log/paypal_mig.log');
+    $logger->setFilename(_PS_MODULE_DIR_,'/paypal/log/paypal_mig.log');
     while ($order = $db->nextRow($results)) {
         try {
             $db->insert('paypal_order_new', array(
-                'id_order' => $order['id_order'],
+                'id_order' => $order['id_order_ps'],
                 'id_cart' => $order['id_cart'],
                 'id_transaction' => $order['id_transaction'],
                 'id_payment' => $order['nonce_payment_token'],
@@ -165,11 +165,11 @@ function upgrade_module_4_3_2($module)
         ) ENGINE = " . _MYSQL_ENGINE_ ;
     $db->Execute($sql);
 
-    $query = DbQuery();
+    $query = new DbQuery();
     $query->select('*');
     $query->from('paypal_capture','pc');
     $query->leftJoin('paypal_order','po','po.id_order = pc.id_order');
-    $results = $db->query($sql);
+    $results = $db->query($query);
 
     while ($capture = $db->nextRow($results)) {
         try {

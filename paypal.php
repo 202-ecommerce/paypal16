@@ -508,7 +508,6 @@ class PayPal extends PaymentModule
             $method_name = Configuration::get('PAYPAL_METHOD');
         }
 
-
         if ($method_name) {
             $method = AbstractMethodPaypal::load($method_name);
             $method->setConfig($_GET + $_POST);
@@ -517,6 +516,9 @@ class PayPal extends PaymentModule
 
     public function hookPayment($params)
     {
+        $this->context->smarty->assign(array(
+            'advancedEU'=> false,
+        ));
         $method = AbstractMethodPaypal::load(Configuration::get('PAYPAL_METHOD'));
         return $method->renderPayment($params,$this);
     }
