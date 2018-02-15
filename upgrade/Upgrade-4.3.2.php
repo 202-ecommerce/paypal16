@@ -107,9 +107,20 @@ function upgrade_module_4_3_2($module)
 		) ENGINE = "._MYSQL_ENGINE_;
     $db->Execute($sql);
 
+    $sql = "CREATE TABLE IF NOT EXISTS `" . _DB_PREFIX_ . "paypal_capture_new` (
+              `id_paypal_capture` INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+              `id_capture` VARCHAR(55),
+              `id_paypal_order` INT(11),
+              `capture_amount` FLOAT(11),
+              `result` VARCHAR(255),
+              `date_add` DATETIME,
+              `date_upd` DATETIME
+        ) ENGINE = " . _MYSQL_ENGINE_ ;
+    $db->Execute($sql);
+
     /** @var DbQueryCore $query */
     $query = new DbQuery();
-    $query->select('*, po.id_order as id_order_ps');
+    $query->select('*, po.id_order as id_order_ps, po.id_cart as id_cart_ps');
     $query->from('orders','po');
     $query->innerJoin('paypal_order','ppo','ppo.id_order = po.id_order');
     $query->leftJoin('paypal_braintree','ppb','ppo.id_order = ppb.id_order');
@@ -132,7 +143,7 @@ function upgrade_module_4_3_2($module)
         try {
             $db->insert('paypal_order_new', array(
                 'id_order' => $order['id_order_ps'],
-                'id_cart' => $order['id_cart'],
+                'id_cart' => $order['id_cart_ps'],
                 'id_transaction' => $order['id_transaction'],
                 'id_payment' => $order['nonce_payment_token'],
                 'client_token' => $order['client_token'],
@@ -146,6 +157,17 @@ function upgrade_module_4_3_2($module)
                 'date_add' => $order['payment_date'],
                 'date_upd' => $order['payment_date'],
             ));
+            $last_id = $db->Insert_ID();
+            if ($order['capture']) {
+                $db->insert('paypal_capture_new', array(
+                    'id_capture' => '',
+                    'id_paypal_order' => $last_id,
+                    'capture_amount' => $order['total_paid'],
+                    'result' => '',
+                    'date_add' => $order['payment_date'],
+                    'date_upd' => $order['payment_date'],
+                ));
+            }
         } catch (Exception $e) {
             $logger->logError($e->getCode().' - '.$e->getMessage());
         }
@@ -153,17 +175,6 @@ function upgrade_module_4_3_2($module)
 
     $db->Execute('RENAME TABLE '._DB_PREFIX_.'paypal_order TO '._DB_PREFIX_.'paypal_order_old');
     $db->Execute('RENAME TABLE '._DB_PREFIX_.'paypal_order_new TO '._DB_PREFIX_.'paypal_order');
-
-    $sql = "CREATE TABLE IF NOT EXISTS `" . _DB_PREFIX_ . "paypal_capture_new` (
-              `id_paypal_capture` INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
-              `id_capture` VARCHAR(55),
-              `id_paypal_order` INT(11),
-              `capture_amount` FLOAT(11),
-              `result` VARCHAR(255),
-              `date_add` DATETIME,
-              `date_upd` DATETIME
-        ) ENGINE = " . _MYSQL_ENGINE_ ;
-    $db->Execute($sql);
 
     $query = new DbQuery();
     $query->select('*');
@@ -173,11 +184,11 @@ function upgrade_module_4_3_2($module)
 
     while ($capture = $db->nextRow($results)) {
         try {
-            $db->insert('paypal_order_new', array(
+            $db->insert('paypal_capture_new', array(
                 'id_capture' => '',
                 'id_paypal_order' => $capture['id_paypal_order'],
                 'capture_amount' => $capture['capture_amount'],
-                'result' => $capture['result'],
+                'result' => 'completed_before_upgrade',
                 'date_add' => $capture['date_add'],
                 'date_upd' => $capture['date_upd'],
             ));

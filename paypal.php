@@ -846,11 +846,6 @@ class PayPal extends PaymentModule
                 '<p class="paypal-warning">'.$this->l('We have unexpected problem during capture operation. See massages for more details').'</p>'
             );
         }
-        if (Tools::getValue('depracated_method')) {
-            $paypal_msg .= $this->displayWarning(
-                '<p class="paypal-warning">'.$this->l('Payments done with PayPal Integral Evolution can be changed via PayPal dashboard').'</p>'
-            );
-        }
 
         if ($paypal_order->total_paid != $paypal_order->total_prestashop) {
             $preferences = $this->context->link->getAdminLink('AdminPreferences', true);
@@ -879,9 +874,6 @@ class PayPal extends PaymentModule
 
         if (!Validate::isLoadedObject($paypal_order)) {
             return false;
-        }
-        if ($paypal_order->payment_method == 'HSS') {
-            Tools::redirect($_SERVER['HTTP_REFERER'].'&depracated_method=1');
         }
         $method = AbstractMethodPaypal::load($paypal_order->method);
         $orderMessage = new Message();
@@ -938,7 +930,7 @@ class PayPal extends PaymentModule
 
         if ($params['newOrderStatus']->id == Configuration::get('PS_OS_REFUND')) {
             $capture = PaypalCapture::loadByOrderPayPalId($paypal_order->id);
-            if (Validate::isLoadedObject($capture) && !$capture->id_capture) {
+            if (Validate::isLoadedObject($capture) && !$capture->id_capture && $capture->result != "completed_before_upgrade") {
                 $orderMessage = new Message();
                 $orderMessage->message = $this->l('You couldn\'t refund order, it\'s not payed yet.');
                 $orderMessage->id_order = $params['id_order'];

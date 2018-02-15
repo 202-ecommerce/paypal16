@@ -651,7 +651,7 @@ class MethodEC extends AbstractMethodPaypal
         $id_paypal_order = $paypal_order->id;
         $capture = PaypalCapture::loadByOrderPayPalId($id_paypal_order);
 
-        $id_transaction = Validate::isLoadedObject($capture) ? $capture->id_capture : $paypal_order->id_transaction;
+        $id_transaction = Validate::isLoadedObject($capture) && $capture->id_capture ? $capture->id_capture : $paypal_order->id_transaction;
 
         $refundTransactionReqType = new RefundTransactionRequestType();
         $refundTransactionReqType->TransactionID = $id_transaction;

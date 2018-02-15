@@ -507,7 +507,7 @@ class MethodBT extends AbstractMethodPaypal
         try {
             $paypal_order = PaypalOrder::loadByOrderId(Tools::getValue('id_order'));
             $capture = PaypalCapture::loadByOrderPayPalId($paypal_order->id);
-            $id_transaction = Validate::isLoadedObject($capture) ? $capture->id_capture : $paypal_order->id_transaction;
+            $id_transaction = Validate::isLoadedObject($capture) && $capture->id_capture ? $capture->id_capture : $paypal_order->id_transaction;
          //  echo '<pre>';print_r($this->gateway->transaction()->find($id_transaction));die;
             $result = $this->gateway->transaction()->refund($id_transaction, number_format($paypal_order->total_paid, 2, ".", ''));
 
