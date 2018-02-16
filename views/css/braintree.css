@@ -26,9 +26,9 @@
     text-align: left !important;
 }
 
-.braintree-row-payment .half_block_field .hosted_field {
+/*.braintree-row-payment .half_block_field .hosted_field {
     width:100%;
-}
+}*/
 
 .braintree-row-payment .hosted_field {
     /*width: 250px;*/
@@ -176,7 +176,7 @@
     margin-top:15px;
 }
 
-.payment_module.braintree-card {
+.payment_module.braintree-card, .payment_module.braintree-paypal {
     border :none;
 }
 .braintree-card #block-cvv {
@@ -199,4 +199,15 @@
     font-weight: bold;
     letter-spacing: -1px;
     position: relative;
+}
+
+.payment_module.paypal-braintree img, .braintree-row-payment .head img {
+    float: none;
+    vertical-align: middle;
+}
+#popup-ppp-waiting p{
+    font-size: 16px;
+    margin: 10px;
+    line-height: 1.5em;
+    color: #373a3c;
 }

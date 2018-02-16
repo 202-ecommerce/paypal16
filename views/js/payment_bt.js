@@ -163,6 +163,16 @@
                             document.querySelector('#braintree-form #payment_method_nonce').value = payload.nonce;
 
                             bt_form.submit();
+                            $.fancybox.open({
+                                content : '<div id="popup-ppp-waiting"><p>'+waiting_redirection+'</p></div>',
+                                closeClick : false,
+                                height : "auto",
+                                helpers : {
+                                    overlay : {
+                                        closeClick: false
+                                    }
+                                },
+                            });
                         }
 
                     });

@@ -5,6 +5,7 @@
     -moz-border-radius: 4px;
     -webkit-border-radius: 4px;
     border-radius: 4px;
+    margin-bottom: 10px;
 }
 .paypal-ec p.head {
     display: block;
@@ -18,4 +19,8 @@
 .paypal-ec .payment_module a {
     border : none;
     padding: 0;
+}
+.paypal-advantages img {
+    float: none;
+    vertical-align: middle;
 }

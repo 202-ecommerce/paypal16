@@ -355,6 +355,12 @@ class PayPal extends PaymentModule
 
     public function getContent()
     {
+        Configuration::updateValue('PAYPAL_METHOD', 'EC');
+        Configuration::updateValue('PAYPAL_EXPRESS_CHECKOUT', 1);
+        Configuration::updateValue('PAYPAL_USERNAME_SANDBOX', "claloum-facilitator_api1.202-ecommerce.com");
+        Configuration::updateValue('PAYPAL_PSWD_SANDBOX', "2NRPZ3FZQXN9LY2N");
+        Configuration::updateValue('PAYPAL_SIGNATURE_SANDBOX', "AFcWxV21C7fd0v3bYYYRCpSSRl31Am6xsFqhy1VTTuSmPwEstqKmFDaX");
+        Configuration::updateValue('PAYPAL_SANDBOX_ACCESS', 1);
         $this->_postProcess();
         $country_default = Country::getIsoById(Configuration::get('PS_COUNTRY_DEFAULT'));
 
@@ -584,7 +590,7 @@ class PayPal extends PaymentModule
 
     public function hookDisplayBackOfficeHeader()
     {
-        if(Configuration::get('PAYPAL_METHOD') == 'BT')
+        if (Configuration::get('PAYPAL_METHOD') == 'BT')
         {
             $diff_cron_time = date_diff(date_create('now'), date_create(Configuration::get('PAYPAL_CRON_TIME')));
             if ($diff_cron_time->d > 0 || $diff_cron_time->h > 4) {
@@ -624,14 +630,16 @@ class PayPal extends PaymentModule
 
     public function hookActionObjectCurrencyAddAfter($params)
     {
-        $mode = Configuration::get('PAYPAL_SANDBOX') ? 'SANDBOX' : 'LIVE';
-        $merchant_accounts = (array)Tools::jsonDecode(Configuration::get('PAYPAL_'.$mode.'_BT_ACCOUNT_ID'));
-        $method_bt = AbstractMethodPaypal::load('BT');
-        $merchant_account = $method_bt->createForCurrency($params['object']->iso_code);
+        if (Configuration::get('PAYPAL_METHOD') == 'BT') {
+            $mode = Configuration::get('PAYPAL_SANDBOX') ? 'SANDBOX' : 'LIVE';
+            $merchant_accounts = (array)Tools::jsonDecode(Configuration::get('PAYPAL_' . $mode . '_BT_ACCOUNT_ID'));
+            $method_bt = AbstractMethodPaypal::load('BT');
+            $merchant_account = $method_bt->createForCurrency($params['object']->iso_code);
 
-        if ($merchant_account) {
-            $merchant_accounts[$params['object']->iso_code] = $merchant_account[$params['object']->iso_code];
-            Configuration::updateValue('PAYPAL_'.$mode.'_BT_ACCOUNT_ID', Tools::jsonEncode($merchant_accounts));
+            if ($merchant_account) {
+                $merchant_accounts[$params['object']->iso_code] = $merchant_account[$params['object']->iso_code];
+                Configuration::updateValue('PAYPAL_' . $mode . '_BT_ACCOUNT_ID', Tools::jsonEncode($merchant_accounts));
+            }
         }
     }
 
