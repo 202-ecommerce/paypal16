@@ -75,3 +75,12 @@ input#configuration_form_submit_btn {
     border-left: solid 3px #fcc94f;
     color: #D2A63C;
 }
+.active-products .panel .btn.btn-default {
+    right: 15px;
+    bottom: 10px;
+    position: absolute;
+}
+#paypal_conf .active-products ul {
+    padding-left: 33px;
+    list-style: disc;
+}

@@ -29,7 +29,7 @@ function setInput()
     $('#paypal_url_page').val(document.location.href);
     $('#paypal_combination').val($('input[id=idCombination]').val());
     if (typeof ec_sc_in_context != "undefined" && ec_sc_in_context) {
-        ECSInContext(combination);
+        ECSInContext($('input[id=idCombination]').val());
     } else {
         $('#paypal_payment_form_cart').submit();
     }
@@ -42,7 +42,7 @@ function ECSInContext(combination) {
     $.ajax({
         url: ec_sc_action_url,
         type: "GET",
-        data: 'getToken=1&id_product='+$('#paypal_payment_form_cart input[name="id_product"]').val()+'&quantity='+$('[name="qty"]').val()+'&combination='+combination.join('|'),
+        data: 'getToken=1&id_product='+$('#paypal_payment_form_cart input[name="id_product"]').val()+'&quantity='+$('[name="qty"]').val()+'&combination='+combination,
         success: function (token) {
             var url = paypal.checkout.urlPrefix +token;
             console.log(url);

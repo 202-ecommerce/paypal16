@@ -735,8 +735,7 @@ class MethodEC extends AbstractMethodPaypal
             'ec_sc_in_context' => Configuration::get('PAYPAL_EC_IN_CONTEXT'),
             'merchant_id' => Configuration::get('PAYPAL_MERCHANT_ID_'.Tools::strtoupper($environment)),
             'environment' => $environment,
-            'ec_sc_action_url'   => urlencode($context->link->getModuleLink($this->name, 'ecScInit', array('credit_card'=>'0','getToken'=>1), true)),
-            'ec_sc_in_context' => Configuration::get('PAYPAL_EC_IN_CONTEXT'),
+            'ec_sc_action_url'   => urlencode($context->link->getModuleLink($this->name, 'ecScInit', array('credit_card'=>'0','getToken'=>1))),
         ));
 
         $paypal = Module::getInstanceByName('paypal');
