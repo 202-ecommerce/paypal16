@@ -24,3 +24,7 @@
     float: none;
     vertical-align: middle;
 }
+.paypal-ec .payment_module a:hover {
+    background: transparent;
+    cursor: pointer;
+}

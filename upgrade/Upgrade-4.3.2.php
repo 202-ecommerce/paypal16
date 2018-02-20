@@ -36,6 +36,7 @@ function upgrade_module_4_3_2($module)
     }
 
     $mode = Configuration::get('PAYPAL_SANDBOX') ? 'SANDBOX' : 'LIVE';
+    $capture = Configuration::get('PAYPAL_CAPTURE') ? 'authorization' : 'sale';
     if (Configuration::get('PAYPAL_PAYMENT_METHOD') == 5) {
         if (Configuration::get('PAYPAL_PLUS_CLIENT_ID') && Configuration::get('PAYPAL_PLUS_SECRET')) {
             Configuration::updateValue('PAYPAL_'.$mode.'_CLIENTID', Configuration::get('PAYPAL_PLUS_CLIENT_ID'));
@@ -46,6 +47,7 @@ function upgrade_module_4_3_2($module)
             if ($experience_web) {
                 Configuration::updateValue('PAYPAL_PLUS_EXPERIENCE', $experience_web->id);
             }
+            Configuration::updateValue('PAYPAL_API_INTENT', $capture);
         }
     } elseif (Configuration::get('PAYPAL_BRAINTREE_ENABLED')) {
         if (Configuration::get('PAYPAL_BRAINTREE_ACCESS_TOKEN')
@@ -59,6 +61,7 @@ function upgrade_module_4_3_2($module)
             Configuration::updateValue('PAYPAL_' . $mode . '_BT_REFRESH_TOKEN', Configuration::get('PAYPAL_BRAINTREE_REFRESH_TOKEN'));
             Configuration::updateValue('PAYPAL_' . $mode . '_BT_MERCHANT_ID', Configuration::get('PAYPAL_BRAINTREE_MERCHANT_ID'));
             Configuration::updateValue('PAYPAL_BY_BRAINTREE', 1);
+            Configuration::updateValue('PAYPAL_API_INTENT', $capture);
             $method_bt = AbstractMethodPaypal::load('BT');
             $existing_merchant_accounts = $method_bt->getAllCurrency();
             $new_merchant_accounts = $method_bt->createForCurrency();
@@ -67,8 +70,16 @@ function upgrade_module_4_3_2($module)
             if ($all_merchant_accounts) {
                 Configuration::updateValue('PAYPAL_'.$mode.'_BT_ACCOUNT_ID', Tools::jsonEncode($all_merchant_accounts));
             }
+            if (Configuration::get('PAYPAL_API_USER')
+                && Configuration::get('PAYPAL_API_PASSWORD')
+                && Configuration::get('PAYPAL_API_SIGNATURE')) {
+                Configuration::updateValue('PAYPAL_USERNAME_'.$mode, Configuration::get('PAYPAL_API_USER'));
+                Configuration::updateValue('PAYPAL_PSWD_'.$mode, Configuration::get('PAYPAL_API_PASSWORD'));
+                Configuration::updateValue('PAYPAL_SIGNATURE_'.$mode, Configuration::get('PAYPAL_API_SIGNATURE'));
+                Configuration::updateValue('PAYPAL_MERCHANT_ID_'.$mode, Configuration::get('PAYPAL_IN_CONTEXT_CHECKOUT_M_ID'));
+            }
         }
-    } elseif (Configuration::get('PAYPAL_PAYMENT_METHOD') == 1 || Configuration::get('PAYPAL_PAYMENT_METHOD') == 4) {
+    } elseif (Configuration::get('PAYPAL_PAYMENT_METHOD') == 1 || Configuration::get('PAYPAL_PAYMENT_METHOD') == 4 || Configuration::get('PAYPAL_PAYMENT_METHOD') == 2) {
         if (Configuration::get('PAYPAL_API_USER')
             && Configuration::get('PAYPAL_API_PASSWORD')
             && Configuration::get('PAYPAL_API_SIGNATURE')) {
@@ -78,10 +89,19 @@ function upgrade_module_4_3_2($module)
             Configuration::updateValue('PAYPAL_PSWD_'.$mode, Configuration::get('PAYPAL_API_PASSWORD'));
             Configuration::updateValue('PAYPAL_SIGNATURE_'.$mode, Configuration::get('PAYPAL_API_SIGNATURE'));
             Configuration::updateValue('PAYPAL_'.$mode.'_ACCESS', 1);
+            Configuration::updateValue('PAYPAL_API_INTENT', $capture);
             if (Configuration::get('PAYPAL_IN_CONTEXT_CHECKOUT_M_ID')) {
                 Configuration::updateValue('PAYPAL_MERCHANT_ID_'.$mode, Configuration::get('PAYPAL_IN_CONTEXT_CHECKOUT_M_ID'));
                 Configuration::updateValue('PAYPAL_EC_IN_CONTEXT', 1);
             }
+        }
+    }
+
+    if (Configuration::get('PAYPAL_PAYMENT_METHOD') == 2) {
+        if (Configuration::get('PAYPAL_METHOD') == 'EC') {
+            Configuration::updateValue('PAYPAL_UPDATE_MSG', $module->l("Method HSS is deprecated. You use EC now"));
+        } else {
+            Configuration::updateValue('PAYPAL_UPDATE_MSG', $module->l("You have to do onboarding"));
         }
     }
 

@@ -355,12 +355,16 @@ class PayPal extends PaymentModule
 
     public function getContent()
     {
-        Configuration::updateValue('PAYPAL_METHOD', 'EC');
+        if (Configuration::get('PAYPAL_UPDATE_MSG')) {
+            $this->message .= $this->displayConfirmation(Configuration::get('PAYPAL_UPDATE_MSG'));
+            Configuration::updateValue('PAYPAL_UPDATE_MSG', false);
+        }
+       /* Configuration::updateValue('PAYPAL_METHOD', 'EC');
         Configuration::updateValue('PAYPAL_EXPRESS_CHECKOUT', 1);
         Configuration::updateValue('PAYPAL_USERNAME_SANDBOX', "claloum-facilitator_api1.202-ecommerce.com");
         Configuration::updateValue('PAYPAL_PSWD_SANDBOX', "2NRPZ3FZQXN9LY2N");
         Configuration::updateValue('PAYPAL_SIGNATURE_SANDBOX', "AFcWxV21C7fd0v3bYYYRCpSSRl31Am6xsFqhy1VTTuSmPwEstqKmFDaX");
-        Configuration::updateValue('PAYPAL_SANDBOX_ACCESS', 1);
+        Configuration::updateValue('PAYPAL_SANDBOX_ACCESS', 1);*/
         $this->_postProcess();
         $country_default = Country::getIsoById(Configuration::get('PS_COUNTRY_DEFAULT'));
 

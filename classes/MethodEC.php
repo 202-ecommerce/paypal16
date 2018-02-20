@@ -139,7 +139,14 @@ class MethodEC extends AbstractMethodPaypal
                     )
                 ),
             ),
+            array(
+                'type' => 'text',
+                'label' => $module->l('Merchant Id'),
+                'name' => 'paypal_ec_merchant_id',
+                'hint' => $module->l('Fill this field with your merchant id')
+            ),
         ));
+
 
         $params['fields_value'] = array(
             'paypal_intent' => Configuration::get('PAYPAL_API_INTENT'),
@@ -315,7 +322,7 @@ class MethodEC extends AbstractMethodPaypal
         $paymentDetails->PaymentAction = Tools::ucfirst(Configuration::get('PAYPAL_API_INTENT'));
         $setECReqDetails = new SetExpressCheckoutRequestDetailsType();
         $setECReqDetails->PaymentDetails[0] = $paymentDetails;
-        $setECReqDetails->CancelURL = Context::getContext()->link->getPageLink('order', true);
+        $setECReqDetails->CancelURL = Context::getContext()->link->getPageLink('order', true, array(), array('step' => 3));
         $setECReqDetails->ReturnURL = Context::getContext()->link->getModuleLink($this->name, 'ecValidation', array(), true);
         $setECReqDetails->NoShipping = 1;
         $setECReqDetails->AddressOverride = 0;
@@ -665,7 +672,7 @@ class MethodEC extends AbstractMethodPaypal
 
         $paypalService = new PayPalAPIInterfaceServiceService($this->_getCredentialsInfo());
         $response = $paypalService->RefundTransaction($refundTransactionReq);
-
+        //echo '<pre>';print_r($response);die;
         if ($response instanceof PayPal\PayPalAPI\RefundTransactionResponseType) {
             if (isset($response->Errors)) {
                 $result = array(

@@ -13,13 +13,6 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
-// init in-context
-document.addEventListener("DOMContentLoaded", function(){    window.paypalCheckoutReady = function() {
-        paypal.checkout.setup(merchant_id, {
-            environment: environment,
-        });
-    };
-});
 
 function ECInContext() {
     paypal.checkout.initXO();

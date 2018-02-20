@@ -69,9 +69,13 @@
 
 <script>
     var merchant_id = "{$merchant_id|escape:'htmlall':'UTF-8'}";
-    var environment = "{$environment|escape:'htmlall':'UTF-8'}";
+    var ec_environment = "{$environment|escape:'htmlall':'UTF-8'}";
     var url_token = "{$url_token|escape:'htmlall':'UTF-8'|urldecode}";
-
+    window.paypalCheckoutReady = function() {
+        paypal.checkout.setup(merchant_id, {
+            environment: ec_environment,
+        });
+    };
 </script>
 
 {if isset($ec_sc_validation_url)}
