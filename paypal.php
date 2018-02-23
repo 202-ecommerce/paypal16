@@ -1,6 +1,6 @@
 <?php
 /**
- * 2007-2017 PrestaShop
+ * 2007-2018 PrestaShop
  *
  * NOTICE OF LICENSE
  *
@@ -19,7 +19,7 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  *  @author    PrestaShop SA <contact@prestashop.com>
- *  @copyright 2007-2017 PrestaShop SA
+ *  @copyright 2007-2018 PrestaShop SA
  *  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  *  International Registered Trademark & Property of PrestaShop SA
  */
@@ -378,7 +378,7 @@ class PayPal extends PaymentModule
         $this->context->smarty->assign(array(
             'path' => $this->_path,
             'active_products' => $this->express_checkout,
-            'return_url' => $this->module_link,
+            'return_url' => $this->context->link->getAdminLink('AdminModules', true).'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name,
             'country' => Country::getNameById($this->context->language->id, $this->context->country->id),
             'localization' => $this->context->link->getAdminLink('AdminLocalization', true),
             'preference' => $this->context->link->getAdminLink('AdminPreferences', true),
@@ -391,7 +391,7 @@ class PayPal extends PaymentModule
             'PAYPAL_LIVE_SECRET' => Configuration::get('PAYPAL_LIVE_SECRET'),
         ));
 
-        if ($country_default == "FR" || $country_default == "GB" || $country_default == "IT" || $country_default == "ES") {
+        if (getenv('PLATEFORM') != 'PSREADY' && ($country_default == "FR" || $country_default == "GB" || $country_default == "IT" || $country_default == "ES")) {
             $this->context->smarty->assign(array(
                 'braintree_available' => true,
             ));
@@ -599,35 +599,33 @@ class PayPal extends PaymentModule
             $diff_cron_time = date_diff(date_create('now'), date_create(Configuration::get('PAYPAL_CRON_TIME')));
             if ($diff_cron_time->d > 0 || $diff_cron_time->h > 4) {
                 $bt_orders = PaypalOrder::getPaypalBtOrdersIds();
-                if (!$bt_orders) {
-                    return true;
-                }
+                if ($bt_orders) {
+                    $method = AbstractMethodPaypal::load('BT');
+                    $transactions = $method->searchTransactions($bt_orders);
 
-                $method = AbstractMethodPaypal::load('BT');
-                $transactions = $method->searchTransactions($bt_orders);
-
-                foreach ($transactions as $transaction) {
-                    $paypal_order_id = PaypalOrder::getIdOrderByTransactionId($transaction->id);
-                    $paypal_order = PaypalOrder::loadByOrderId($paypal_order_id);
-                    $ps_order = new Order($paypal_order_id);
-                    switch ($transaction->status) {
-                        case 'declined':
-                            $paypal_order->payment_status = $transaction->status;
-                            $ps_order->setCurrentState(Configuration::get('PS_OS_ERROR'));
-                            break;
-                        case 'settled':
-                            $paypal_order->payment_status = $transaction->status;
-                            $ps_order->setCurrentState(Configuration::get('PS_OS_PAYMENT'));
-                            break;
-                        case 'settling': // waiting
-                        case 'submit_for_settlement': //waiting
-                        default:
-                            // do nothing and check later one more time
-                            break;
+                    foreach ($transactions as $transaction) {
+                        $paypal_order_id = PaypalOrder::getIdOrderByTransactionId($transaction->id);
+                        $paypal_order = PaypalOrder::loadByOrderId($paypal_order_id);
+                        $ps_order = new Order($paypal_order_id);
+                        switch ($transaction->status) {
+                            case 'declined':
+                                $paypal_order->payment_status = $transaction->status;
+                                $ps_order->setCurrentState(Configuration::get('PS_OS_ERROR'));
+                                break;
+                            case 'settled':
+                                $paypal_order->payment_status = $transaction->status;
+                                $ps_order->setCurrentState(Configuration::get('PS_OS_PAYMENT'));
+                                break;
+                            case 'settling': // waiting
+                            case 'submit_for_settlement': //waiting
+                            default:
+                                // do nothing and check later one more time
+                                break;
+                        }
+                        $paypal_order->update();
                     }
-                    $paypal_order->update();
+                    Configuration::updateValue('PAYPAL_CRON_TIME', date('Y-m-d H:i:s'));
                 }
-                Configuration::updateValue('PAYPAL_CRON_TIME', date('Y-m-d H:i:s'));
             }
         }
     }
@@ -754,14 +752,50 @@ class PayPal extends PaymentModule
         return $method->renderExpressCheckoutShortCut($this->context, 'EC');
     }
 
+    public function needConvert()
+    {
+        $currency_mode = Currency::getPaymentCurrenciesSpecial($this->id);
+        $mode_id = $currency_mode['id_currency'];
+        if ($mode_id == -2) {
+            return true;
+        }
+        return false;
+    }
+    public function getPaymentCurrencyIso()
+    {
+        if ($this->needConvert()) {
+            $currency = new Currency((int)Configuration::get('PS_CURRENCY_DEFAULT'));
+        } else {
+            $currency = Context::getContext()->currency;
+        }
+        return $currency->iso_code;
+    }
+
+    public static function getDecimal()
+    {
+        $paypal = Module::getInstanceByName('paypal');
+        $currency_wt_decimal = array('HUF', 'JPY', 'TWD');
+        if (in_array($paypal->getPaymentCurrencyIso(), $currency_wt_decimal)) {
+            return (int)0;
+        } else {
+            return (int)2;
+        }
+    }
+
     public function validateOrder($id_cart, $id_order_state, $amount_paid, $payment_method = 'Unknown', $message = null, $transaction = array(), $currency_special = null, $dont_touch_amount = false, $secure_key = false, Shop $shop = null)
     {
+        if ($this->needConvert()) {
+            $amount_paid_curr = Tools::ps_round(Tools::convertPrice($amount_paid, new Currency($currency_special), true), 2);
+        } else {
+            $amount_paid_curr = Tools::ps_round($amount_paid, 2);
+        }
+        $amount_paid = Tools::ps_round($amount_paid, 2);
         $this->amount_paid_paypal = (float)$amount_paid;
 
         $cart = new Cart((int) $id_cart);
         $total_ps = (float)$cart->getOrderTotal(true, Cart::BOTH);
-        if ($amount_paid > $total_ps+0.10 || $amount_paid < $total_ps-0.10) {
-            $total_ps = $amount_paid;
+        if ($amount_paid_curr > $total_ps+0.10 || $amount_paid_curr < $total_ps-0.10) {
+            $total_ps = $amount_paid_curr;
         }
         parent::validateOrder(
             (int) $id_cart,
@@ -775,20 +809,15 @@ class PayPal extends PaymentModule
             $secure_key,
             $shop
         );
-        if (Tools::version_compare(_PS_VERSION_, '1.7.1.0', '>')) {
-            $order = Order::getByCartId($id_cart);
-        } else {
-            $id_order = Order::getOrderByCartId($id_cart);
-            $order = new Order($id_order);
-        }
-        if (isset($amount_paid) && $amount_paid != 0 && $order->total_paid != $amount_paid) {
-            $order->total_paid = $amount_paid;
-            $order->total_paid_real = $amount_paid;
-            $order->total_paid_tax_incl = $amount_paid;
+        $id_order = Order::getOrderByCartId($id_cart);
+        $order = new Order($id_order);
+        if (isset($amount_paid_curr) && $amount_paid_curr != 0 && $order->total_paid != $amount_paid_curr) {
+            $order->total_paid = $amount_paid_curr;
+            $order->total_paid_real = $amount_paid_curr;
+            $order->total_paid_tax_incl = $amount_paid_curr;
             $order->update();
-
             $sql = 'UPDATE `'._DB_PREFIX_.'order_payment`
-		    SET `amount` = '.(float)$amount_paid.'
+		    SET `amount` = '.(float)$amount_paid_curr.'
 		    WHERE  `order_reference` = "'.pSQL($order->reference).'"';
             Db::getInstance()->execute($sql);
         }
@@ -1106,7 +1135,7 @@ class PayPal extends PaymentModule
         return $sdk->getUrlConnect($connect_params);
     }
 
-    public function hookDisplayInvoiceLegalFreeText($params)
+    public function hookDisplayPDFInvoice($params)
     {
         $paypal_order = PaypalOrder::loadByOrderId($params['order']->id);
         if (!Validate::isLoadedObject($paypal_order) || $paypal_order->method != 'PPP'
