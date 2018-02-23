@@ -70,7 +70,7 @@ class PayPal extends PaymentModule
         $this->description = $this->l('Benefit from PayPal’s complete payments platform and grow your business online, on mobile and internationally. Accept credit cards, debit cards and PayPal payments.');
         $this->confirmUninstall = $this->l('Are you sure you want to delete your details?');
         $this->express_checkout = $this->l('PayPal Express Checkout ');
-        $this->module_link = $this->context->link->getAdminLink('AdminModules', true).'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name;
+        $this->module_link = $this->context->link->getAdminLink('AdminModules', false).'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name;
     }
 
     public function install()
@@ -1136,7 +1136,7 @@ class PayPal extends PaymentModule
 
         $shop = Context::getContext()->shop;
 
-        $base = (($ssl && $this->ssl_enable) ? 'https://'.$shop->domain_ssl : 'http://'.$shop->domain);
+        $base = (($ssl && Configuration::get('PS_SSL_ENABLED')) ? 'https://'.$shop->domain_ssl : 'http://'.$shop->domain);
 
         return $base.$shop->getBaseURI();
     }

@@ -43,7 +43,8 @@ function upgrade_module_4_3_2($module)
             Configuration::updateValue('PAYPAL_'.$mode.'_SECRET', Configuration::get('PAYPAL_PLUS_SECRET'));
             Configuration::updateValue('PAYPAL_METHOD', 'PPP');
             Configuration::updateValue('PAYPAL_PLUS_ENABLED', 1);
-            $experience_web = $module->createWebExperience();
+            $method = AbstractMethodPaypal::load('PPP');
+            $experience_web = $method->createWebExperience();
             if ($experience_web) {
                 Configuration::updateValue('PAYPAL_PLUS_EXPERIENCE', $experience_web->id);
             }
@@ -151,9 +152,9 @@ function upgrade_module_4_3_2($module)
     $methods = array(
         '1' => 'EC',
         '2' => 'EC',
-        '3' => 'EC',
-        '4' => 'PPP',
-        '5' => 'BT',
+        '4' => 'EC',
+        '5' => 'PPP',
+        '6' => 'BT'
     );
 
     /** @var FileLoggerCore $logger */
@@ -172,13 +173,13 @@ function upgrade_module_4_3_2($module)
                 'total_paid' => $order['total_paid'],
                 'payment_status' => $order['payment_status'],
                 'total_prestashop' => $order['total_paid'],
-                'method' => $methods[$order['payment_method']],
+                'method' => $order['id_paypal_braintree'] ? 'BT' : $methods[$order['payment_method']],
                 'payment_tool' => $order['pui_informations'] ? 'PAY_UPON_INVOICE' : '',
                 'date_add' => $order['payment_date'],
                 'date_upd' => $order['payment_date'],
             ));
             $last_id = $db->Insert_ID();
-            if ($order['capture']) {
+            if ($order['capture'] && $methods[$order['payment_method']] != 'PPP') {
                 $db->insert('paypal_capture_new', array(
                     'id_capture' => '',
                     'id_paypal_order' => $last_id,

@@ -37,7 +37,7 @@
 {else}
     {if $version16}
         <div id="paypal-plus-payment">
-            <p class="head"><img src="{$path|escape:'htmlall':'UTF-8'}/views/img/mini-cards.png" alt="{l s='Pay with PayPal Plus' mod='paypal'}">
+            <p class="head">
                 {l s='Pay with PayPal Plus' mod='paypal'}{if $advantages} | {l s='It\'s easy, simple and secure' mod='paypal'}{/if}</p>
             {include file="./payment_infos.tpl"}
             <div class="paypal-plus">
@@ -48,7 +48,6 @@
     {else}
         <p class="payment_module">
             <a title="{l s='Pay with PayPal Plus' mod='paypal'}">
-                <img src="{$path|escape:'htmlall':'UTF-8'}/views/img/mini-cards.png" alt="{l s='Pay with PayPal Plus' mod='paypal'}">
                 {l s='Pay with PayPal Plus' mod='paypal'}{if $advantages} | {l s='It\'s easy, simple and secure' mod='paypal'}{/if}
             </a>
             {include file="./payment_infos.tpl"}

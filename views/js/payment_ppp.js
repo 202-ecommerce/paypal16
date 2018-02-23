@@ -14,16 +14,16 @@
  */
 
 $(document).ready(function(){
-    if (advancedEU) {
-        $(document).on('click', '.payment_module', function(e) {
+    $(document).on('click', '.payment_module', function(e) {
+        if (advancedEU) {
             var ppp_el = $(this).parent().find('#paypal-plus-payment');
             if (ppp_el.length) {               // Clicked element has a #paypal-plus-payment child.
                 ppp_el.parent().stop().show(); // Display paypal options.
             } else {                           // Clicked element doesn't contain #ppplusDiv child,
                 $(document).find('#paypal-plus-payment').parent().stop().hide(); // thus we can hide paypal options.
             }
-        });
-    }
+        }
+    });
 });
 
 
